@@ -35,11 +35,11 @@ resource "aws_security_group" "vpc_endpoints" {
   count = var.enable_vpc_endpoints ? 1 : 0
 
   name_prefix = "${local.name_prefix}-vpc-endpoints-"
-  description = "HTTPS desde la VPC hacia interface endpoints"
+  description = "HTTPS from VPC to interface endpoints"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "HTTPS desde la VPC"
+    description = "HTTPS from VPC"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
