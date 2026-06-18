@@ -336,12 +336,34 @@ module "waf" {
   environment  = local.environment
   tags         = local.common_tags
 
-  origin_verify_secret  = var.origin_verify_secret
-  api_gateway_stage_arn = module.apigateway.stage_arn
-  cloudfront_rate_limit = var.waf_cloudfront_rate_limit
+  origin_verify_secret   = var.origin_verify_secret
+  api_gateway_stage_arn  = module.apigateway.stage_arn
+  cloudfront_rate_limit  = var.waf_cloudfront_rate_limit
+  api_gateway_rate_limit = var.waf_api_gateway_rate_limit
+
+  enable_geo_restriction = var.waf_enable_geo_restriction
+  allowed_country_codes  = var.waf_allowed_country_codes
+  enable_bot_control     = var.waf_enable_bot_control
 
   providers = {
     aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+}
+
+module "route53_acm" {
+  count  = local.create_acm_certificate ? 1 : 0
+  source = "../../modules/route53"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  hosted_zone_id         = data.aws_route53_zone.main[0].zone_id
+  create_acm_certificate = true
+  domain_names           = local.cloudfront_domain_names
+
+  providers = {
     aws.us_east_1 = aws.us_east_1
   }
 }
@@ -364,10 +386,36 @@ module "cloudfront" {
   origin_verify_secret    = var.origin_verify_secret
   web_acl_id              = module.waf.cloudfront_web_acl_arn
 
-  portal_aliases = var.cloudfront_portal_aliases
-  api_aliases    = var.cloudfront_api_aliases
-  assets_aliases = var.cloudfront_assets_aliases
-  # acm_certificate_arn = var.cloudfront_acm_certificate_arn
+  portal_aliases      = var.cloudfront_portal_aliases
+  api_aliases         = var.cloudfront_api_aliases
+  assets_aliases      = var.cloudfront_assets_aliases
+  acm_certificate_arn = local.cloudfront_certificate_arn
+
+  depends_on = [module.route53_acm]
+}
+
+module "route53_aliases" {
+  count  = local.edge_dns_enabled ? 1 : 0
+  source = "../../modules/route53"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  hosted_zone_id            = data.aws_route53_zone.main[0].zone_id
+  create_cloudfront_aliases = true
+
+  portal_record_name = var.route53_portal_record_name
+  api_record_name    = var.route53_api_record_name
+  assets_record_name = var.route53_assets_record_name
+
+  portal_cloudfront_domain_name = module.cloudfront.portal_distribution_domain_name
+  api_cloudfront_domain_name    = module.cloudfront.api_distribution_domain_name
+  assets_cloudfront_domain_name = module.cloudfront.assets_distribution_domain_name
+
+  providers = {
+    aws.us_east_1 = aws.us_east_1
+  }
 }
 
 # -----------------------------------------------------------------------------
