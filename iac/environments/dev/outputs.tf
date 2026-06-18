@@ -155,3 +155,8 @@ output "customers_service_name" {
   description = "Nombre del ECS service customers-service"
   value       = module.customers_service.service_name
 }
+
+output "inventory_service_name" {
+  description = "Nombre del ECS service inventory-service"
+  value       = module.inventory_service.service_name
+}

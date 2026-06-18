@@ -18,6 +18,11 @@ output "inventory_work_queue_arn" {
   value       = aws_sqs_queue.inventory_work.arn
 }
 
+output "inventory_work_queue_name" {
+  description = "Nombre de la cola inventory-work"
+  value       = aws_sqs_queue.inventory_work.name
+}
+
 output "orders_events_queue_url" {
   description = "URL de la cola orders-events"
   value       = aws_sqs_queue.orders_events.url
