@@ -1,0 +1,21 @@
+# Bootstrap Terraform State Configuration
+# Copiar a terraform.tfvars y actualizar valores.
+
+aws_region  = "us-east-2"
+aws_profile = "your-sso-profile"
+
+project_name = "distrinorte"
+environment  = "bootstrap"
+
+# Opcional: nombre fijo del bucket (debe ser globalmente único)
+# state_bucket_name_override = "distrinorte-tfstate-your-account-id"
+
+enable_versioning         = true
+enable_lifecycle_rules    = true
+lifecycle_noncurrent_days = 90
+
+tags = {
+  ManagedBy = "terraform"
+  Project   = "distrinorte"
+  Owner     = "devops"
+}
