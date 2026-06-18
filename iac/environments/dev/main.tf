@@ -1,18 +1,18 @@
-# Instanciación de módulos — descomentar en orden del roadmap (docs/03-roadmap-implementacion.md)
+module "networking" {
+  source = "../../modules/networking"
 
-# -----------------------------------------------------------------------------
-# Fase 1 — Fundación
-# -----------------------------------------------------------------------------
-
-# module "networking" {
-#   source = "../../modules/networking"
-#
-#   project_name = local.project_name
-#   environment  = local.environment
-#   tags         = local.common_tags
-#   vpc_cidr     = var.vpc_cidr
-#   azs          = slice(data.aws_availability_zones.available.names, 0, 3)
-# }
+  project_name         = local.project_name
+  environment          = local.environment
+  tags                 = local.common_tags
+  vpc_cidr             = var.vpc_cidr
+  azs                  = var.azs
+  public_subnet_cidrs  = var.public_subnet_cidrs
+  private_subnet_cidrs = var.private_subnet_cidrs
+  data_subnet_cidrs    = var.data_subnet_cidrs
+  enable_nat_gateway   = var.enable_nat_gateway
+  single_nat_gateway   = var.single_nat_gateway
+  enable_vpc_endpoints = var.enable_vpc_endpoints
+}
 
 # module "security_groups" {
 #   source = "../../modules/security-groups"
