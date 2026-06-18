@@ -200,3 +200,18 @@ output "api_gateway_rest_api_id" {
   description = "ID del REST API"
   value       = module.apigateway.rest_api_id
 }
+
+output "cloudfront_portal_domain_name" {
+  description = "Dominio CloudFront del portal SPA"
+  value       = module.cloudfront.portal_distribution_domain_name
+}
+
+output "cloudfront_api_domain_name" {
+  description = "Dominio CloudFront del proxy API"
+  value       = module.cloudfront.api_distribution_domain_name
+}
+
+output "cloudfront_assets_domain_name" {
+  description = "Dominio CloudFront de imagenes de catalogo"
+  value       = module.cloudfront.assets_distribution_domain_name
+}
