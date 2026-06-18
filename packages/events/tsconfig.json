@@ -1,0 +1,9 @@
+{
+  "extends": "@distrinorte/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}
