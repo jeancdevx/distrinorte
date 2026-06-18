@@ -95,3 +95,18 @@ output "orders_events_queue_url" {
   description = "URL cola orders-events"
   value       = module.messaging.orders_events_queue_url
 }
+
+output "ecs_task_execution_role_arn" {
+  description = "ECS task execution role"
+  value       = module.iam.ecs_task_execution_role_arn
+}
+
+output "orders_task_role_arn" {
+  description = "Task role orders-service"
+  value       = module.iam.orders_task_role_arn
+}
+
+output "inventory_task_role_arn" {
+  description = "Task role inventory-service"
+  value       = module.iam.inventory_task_role_arn
+}
