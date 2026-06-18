@@ -258,7 +258,48 @@ module "orders_service" {
   autoscaling_max_capacity = 2
 }
 
-# module "catalog_service" { source = "../../modules/ecs-service" ... }
+module "catalog_service" {
+  source = "../../modules/ecs-service"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  service_name = "catalog-service"
+  cluster_arn  = module.ecs_cluster.cluster_arn
+  cluster_name = module.ecs_cluster.cluster_name
+
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_sg_id]
+  target_group_arn   = module.alb.catalog_target_group_arn
+
+  task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  task_role_arn           = module.iam.catalog_task_role_arn
+
+  container_port  = 3003
+  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
+  container_command = [
+    "sh",
+    "-c",
+    "printf '%s\\n' 'server { listen 3003; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+  ]
+
+  environment_variables = {
+    PORT                    = "3003"
+    NODE_ENV                = var.environment
+    AWS_REGION              = var.aws_region
+    DYNAMODB_PRODUCTS_TABLE = module.dynamodb.products_table_name
+    DYNAMODB_CATEGORY_GSI   = module.dynamodb.products_category_gsi_name
+    REDIS_HOST              = module.elasticache.primary_endpoint
+    REDIS_PORT              = tostring(module.elasticache.port)
+    REDIS_AUTH_TOKEN        = var.redis_auth_token
+    REDIS_TLS               = tostring(var.redis_transit_encryption_enabled)
+    CATALOG_IMAGES_BUCKET   = module.s3.catalog_images_bucket_name
+  }
+
+  autoscaling_max_capacity = 2
+}
 
 # -----------------------------------------------------------------------------
 # Fase 5 — Edge
