@@ -70,3 +70,13 @@ output "db_name" {
   description = "Nombre de la base de datos RDS"
   value       = module.rds.db_name
 }
+
+output "redis_primary_endpoint" {
+  description = "Endpoint primario Redis"
+  value       = module.elasticache.primary_endpoint
+}
+
+output "redis_port" {
+  description = "Puerto Redis"
+  value       = module.elasticache.port
+}
