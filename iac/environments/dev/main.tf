@@ -301,11 +301,19 @@ module "catalog_service" {
   autoscaling_max_capacity = 2
 }
 
-# -----------------------------------------------------------------------------
-# Fase 5 — Edge
-# -----------------------------------------------------------------------------
 
-# module "cognito" { ... }
+module "cognito" {
+  source = "../../modules/cognito"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  callback_urls = var.cognito_callback_urls
+  logout_urls   = var.cognito_logout_urls
+}
+
 # module "apigateway" { ... }
 # module "cloudfront" { ... }
 
