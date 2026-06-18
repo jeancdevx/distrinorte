@@ -169,7 +169,54 @@ module "customers_service" {
   autoscaling_max_capacity = 2
 }
 
-# module "inventory_service" { source = "../../modules/ecs-service" ... }
+module "inventory_service" {
+  source = "../../modules/ecs-service"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  service_name = "inventory-service"
+  cluster_arn  = module.ecs_cluster.cluster_arn
+  cluster_name = module.ecs_cluster.cluster_name
+
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_sg_id]
+  target_group_arn   = module.alb.inventory_target_group_arn
+
+  task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  task_role_arn           = module.iam.inventory_task_role_arn
+
+  container_port  = 3002
+  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
+  container_command = [
+    "sh",
+    "-c",
+    "printf '%s\\n' 'server { listen 3002; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+  ]
+
+  environment_variables = {
+    PORT                     = "3002"
+    NODE_ENV                 = var.environment
+    DATABASE_HOST            = module.rds.endpoint
+    DATABASE_PORT            = tostring(module.rds.port)
+    DATABASE_NAME            = module.rds.db_name
+    DATABASE_USER            = module.rds.username
+    DATABASE_PASSWORD        = var.db_password
+    REDIS_HOST               = module.elasticache.primary_endpoint
+    REDIS_PORT               = tostring(module.elasticache.port)
+    REDIS_AUTH_TOKEN         = var.redis_auth_token
+    REDIS_TLS                = tostring(var.redis_transit_encryption_enabled)
+    EVENT_BUS_NAME           = module.messaging.event_bus_name
+    INVENTORY_WORK_QUEUE_URL = module.messaging.inventory_work_queue_url
+  }
+
+  sqs_queue_name           = module.messaging.inventory_work_queue_name
+  autoscaling_max_capacity = 4
+}
+
+# module "orders_service" { source = "../../modules/ecs-service" ... }
 
 # -----------------------------------------------------------------------------
 # Fase 5 — Edge
