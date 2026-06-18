@@ -1,0 +1,75 @@
+variable "project_name" {
+  description = "Nombre del proyecto"
+  type        = string
+  default     = "distrinorte"
+}
+
+variable "environment" {
+  description = "Entorno de despliegue"
+  type        = string
+  default     = "dev"
+}
+
+variable "aws_region" {
+  description = "Región AWS"
+  type        = string
+  default     = "us-east-2"
+}
+
+variable "aws_profile" {
+  description = "Perfil AWS CLI (SSO)"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "tags" {
+  description = "Tags adicionales"
+  type        = map(string)
+  default     = {}
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block de la VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "azs" {
+  description = "Availability zones"
+  type        = list(string)
+  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDRs subnets públicas"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  description = "CIDRs subnets privadas (compute)"
+  type        = list(string)
+  default     = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
+}
+
+variable "data_subnet_cidrs" {
+  description = "CIDRs subnets de datos (RDS, Redis)"
+  type        = list(string)
+  default     = ["10.0.20.0/24", "10.0.21.0/24", "10.0.22.0/24"]
+}
+
+variable "enable_nat_gateway" {
+  type    = bool
+  default = true
+}
+
+variable "single_nat_gateway" {
+  type    = bool
+  default = true
+}
+
+variable "enable_vpc_endpoints" {
+  type    = bool
+  default = true
+}
