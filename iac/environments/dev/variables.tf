@@ -207,3 +207,15 @@ variable "redis_snapshot_retention_limit" {
   type        = number
   default     = 7
 }
+
+variable "cognito_callback_urls" {
+  description = "OAuth callback URLs del portal B2B"
+  type        = list(string)
+  default     = ["http://localhost:5173/callback"]
+}
+
+variable "cognito_logout_urls" {
+  description = "OAuth logout URLs del portal B2B"
+  type        = list(string)
+  default     = ["http://localhost:5173/"]
+}
