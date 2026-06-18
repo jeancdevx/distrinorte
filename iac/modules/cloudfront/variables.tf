@@ -85,3 +85,8 @@ variable "price_class" {
   type        = string
   default     = "PriceClass_100"
 }
+
+variable "web_acl_id" {
+  description = "ARN del WAF Web ACL (CloudFront scope) asociado a las distribuciones"
+  type        = string
+}
