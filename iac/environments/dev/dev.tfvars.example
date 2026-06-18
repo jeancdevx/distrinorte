@@ -19,6 +19,10 @@ enable_nat_gateway   = true
 single_nat_gateway   = true
 enable_vpc_endpoints = true
 
+s3_force_destroy           = true
+s3_enable_versioning       = true
+s3_backups_noncurrent_days = 90
+
 tags = {
   ManagedBy = "terraform"
   Project   = "distrinorte"

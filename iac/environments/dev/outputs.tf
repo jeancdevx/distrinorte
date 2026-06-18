@@ -30,3 +30,18 @@ output "ecs_sg_id" {
   description = "Security group de tasks ECS"
   value       = module.security_groups.ecs_sg_id
 }
+
+output "portal_spa_bucket_name" {
+  description = "Bucket portal SPA"
+  value       = module.s3.portal_spa_bucket_name
+}
+
+output "catalog_images_bucket_name" {
+  description = "Bucket imagenes de catalogo"
+  value       = module.s3.catalog_images_bucket_name
+}
+
+output "backups_bucket_name" {
+  description = "Bucket de backups"
+  value       = module.s3.backups_bucket_name
+}
