@@ -237,3 +237,22 @@ variable "cloudfront_assets_aliases" {
   type        = list(string)
   default     = []
 }
+
+variable "cloudfront_acm_certificate_arn" {
+  description = "ACM certificate ARN in us-east-1 for CloudFront custom domains"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "origin_verify_secret" {
+  description = "Secreto CloudFront -> API Gateway (header X-Origin-Verify; no commitear)"
+  type        = string
+  sensitive   = true
+}
+
+variable "waf_cloudfront_rate_limit" {
+  description = "Rate limit WAF CloudFront (requests por IP cada 5 min)"
+  type        = number
+  default     = 2000
+}

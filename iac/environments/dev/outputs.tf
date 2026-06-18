@@ -215,3 +215,13 @@ output "cloudfront_assets_domain_name" {
   description = "Dominio CloudFront de imagenes de catalogo"
   value       = module.cloudfront.assets_distribution_domain_name
 }
+
+output "api_gateway_web_acl_id" {
+  description = "WAF regional del API Gateway"
+  value       = module.waf.api_gateway_web_acl_id
+}
+
+output "cloudfront_web_acl_id" {
+  description = "WAF global asociado a las distribuciones CloudFront"
+  value       = module.waf.cloudfront_web_acl_id
+}

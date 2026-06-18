@@ -4,6 +4,7 @@ resource "aws_cloudfront_distribution" "portal" {
   comment             = "DistriNorte portal SPA"
   default_root_object = "index.html"
   price_class         = var.price_class
+  web_acl_id          = var.web_acl_id
   aliases             = var.portal_aliases
 
   origin {
@@ -58,6 +59,7 @@ resource "aws_cloudfront_distribution" "api" {
   is_ipv6_enabled = true
   comment         = "DistriNorte API proxy to API Gateway"
   price_class     = var.price_class
+  web_acl_id      = var.web_acl_id
   aliases         = var.api_aliases
 
   origin {
@@ -112,6 +114,7 @@ resource "aws_cloudfront_distribution" "assets" {
   is_ipv6_enabled = true
   comment         = "DistriNorte catalog images CDN"
   price_class     = var.price_class
+  web_acl_id      = var.web_acl_id
   aliases         = var.assets_aliases
 
   origin {
