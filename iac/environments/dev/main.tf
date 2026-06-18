@@ -36,7 +36,18 @@ module "s3" {
   backups_noncurrent_days = var.s3_backups_noncurrent_days
 }
 
-# module "dynamodb" { ... }
+module "dynamodb" {
+  source = "../../modules/dynamodb"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  billing_mode                  = var.dynamodb_billing_mode
+  enable_point_in_time_recovery = var.dynamodb_enable_pitr
+  deletion_protection           = var.dynamodb_deletion_protection
+}
+
 # module "rds" { ... }
 # module "elasticache" { ... }
 

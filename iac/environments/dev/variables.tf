@@ -91,3 +91,21 @@ variable "s3_backups_noncurrent_days" {
   type        = number
   default     = 90
 }
+
+variable "dynamodb_billing_mode" {
+  description = "Modo de facturacion DynamoDB (PAY_PER_REQUEST o PROVISIONED)"
+  type        = string
+  default     = "PAY_PER_REQUEST"
+}
+
+variable "dynamodb_enable_pitr" {
+  description = "Point-in-time recovery en tabla products"
+  type        = bool
+  default     = false
+}
+
+variable "dynamodb_deletion_protection" {
+  description = "Proteccion contra borrado de tabla DynamoDB"
+  type        = bool
+  default     = false
+}
