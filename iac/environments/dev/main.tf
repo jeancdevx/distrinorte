@@ -118,7 +118,17 @@ module "ecs_cluster" {
   tags         = local.common_tags
 }
 
-# module "alb" { ... }
+module "alb" {
+  source = "../../modules/alb"
+
+  project_name       = local.project_name
+  environment        = local.environment
+  tags               = local.common_tags
+  vpc_id             = module.networking.vpc_id
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.security_groups.alb_sg_id]
+}
+
 # module "orders_service" { source = "../../modules/ecs-service" ... }
 
 # -----------------------------------------------------------------------------
