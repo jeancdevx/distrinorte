@@ -256,3 +256,52 @@ variable "waf_cloudfront_rate_limit" {
   type        = number
   default     = 2000
 }
+
+variable "waf_api_gateway_rate_limit" {
+  description = "Rate limit WAF API Gateway (requests por IP cada 5 min)"
+  type        = number
+  default     = 1000
+}
+
+variable "waf_enable_geo_restriction" {
+  description = "WAF geo-blocking: solo allowed_country_codes"
+  type        = bool
+  default     = false
+}
+
+variable "waf_allowed_country_codes" {
+  description = "Paises permitidos por WAF (ISO 3166-1 alpha-2)"
+  type        = list(string)
+  default     = ["PE"]
+}
+
+variable "waf_enable_bot_control" {
+  description = "AWS Bot Control en WAF (reglas de pago)"
+  type        = bool
+  default     = false
+}
+
+variable "route53_domain_name" {
+  description = "Dominio Route53 existente (ej. galaxymorph.com). Null omite DNS edge."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "route53_portal_record_name" {
+  description = "FQDN del portal SPA"
+  type        = string
+  default     = "pedidos.galaxymorph.com"
+}
+
+variable "route53_api_record_name" {
+  description = "FQDN del proxy API"
+  type        = string
+  default     = "api.pedidos.galaxymorph.com"
+}
+
+variable "route53_assets_record_name" {
+  description = "FQDN del CDN de assets"
+  type        = string
+  default     = "assets.galaxymorph.com"
+}
