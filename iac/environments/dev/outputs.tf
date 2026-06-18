@@ -170,3 +170,23 @@ output "catalog_service_name" {
   description = "Nombre del ECS service catalog-service"
   value       = module.catalog_service.service_name
 }
+
+output "cognito_user_pool_id" {
+  description = "ID del Cognito User Pool"
+  value       = module.cognito.user_pool_id
+}
+
+output "cognito_app_client_id" {
+  description = "Client ID del SPA Cognito"
+  value       = module.cognito.app_client_id
+}
+
+output "cognito_hosted_ui_base_url" {
+  description = "URL base OAuth / hosted UI Cognito"
+  value       = module.cognito.hosted_ui_base_url
+}
+
+output "cognito_issuer_url" {
+  description = "Issuer URL para JWT"
+  value       = module.cognito.issuer_url
+}
