@@ -14,14 +14,15 @@ module "networking" {
   enable_vpc_endpoints = var.enable_vpc_endpoints
 }
 
-# module "security_groups" {
-#   source = "../../modules/security-groups"
-#
-#   project_name = local.project_name
-#   environment  = local.environment
-#   tags         = local.common_tags
-#   vpc_id       = module.networking.vpc_id
-# }
+module "security_groups" {
+  source = "../../modules/security-groups"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  vpc_id       = module.networking.vpc_id
+  vpc_cidr     = module.networking.vpc_cidr
+}
 
 # -----------------------------------------------------------------------------
 # Fase 2 — Datos
