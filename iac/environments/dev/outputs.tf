@@ -225,3 +225,23 @@ output "cloudfront_web_acl_id" {
   description = "WAF global asociado a las distribuciones CloudFront"
   value       = module.waf.cloudfront_web_acl_id
 }
+
+output "route53_portal_fqdn" {
+  description = "FQDN del portal en Route53"
+  value       = try(module.route53_aliases[0].portal_fqdn, null)
+}
+
+output "route53_api_fqdn" {
+  description = "FQDN de la API en Route53"
+  value       = try(module.route53_aliases[0].api_fqdn, null)
+}
+
+output "route53_assets_fqdn" {
+  description = "FQDN de assets en Route53"
+  value       = try(module.route53_aliases[0].assets_fqdn, null)
+}
+
+output "acm_certificate_arn" {
+  description = "ARN del certificado ACM CloudFront (us-east-1)"
+  value       = local.cloudfront_certificate_arn
+}
