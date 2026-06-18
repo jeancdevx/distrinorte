@@ -169,3 +169,41 @@ variable "db_performance_insights_enabled" {
   type        = bool
   default     = false
 }
+
+variable "redis_engine_version" {
+  description = "Version de Redis"
+  type        = string
+  default     = "7.1"
+}
+
+variable "redis_node_type" {
+  description = "Tipo de nodo ElastiCache"
+  type        = string
+  default     = "cache.t4g.micro"
+}
+
+variable "redis_num_cache_clusters" {
+  description = "Nodos Redis (1 dev; 2+ con failover)"
+  type        = number
+  default     = 1
+}
+
+variable "redis_transit_encryption_enabled" {
+  description = "TLS en transito para Redis"
+  type        = bool
+  default     = true
+}
+
+variable "redis_auth_token" {
+  description = "Token AUTH Redis (requerido con TLS; no commitear)"
+  type        = string
+  sensitive   = true
+  default     = null
+  nullable    = true
+}
+
+variable "redis_snapshot_retention_limit" {
+  description = "Dias de retencion de snapshots Redis"
+  type        = number
+  default     = 7
+}
