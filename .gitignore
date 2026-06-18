@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.turbo/
+*.tsbuildinfo
+packages/database/generated/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Local Terraform values (copiar desde *.example)
+terraform.tfvars
+*.tfvars
+!*.tfvars.example
+*.auto.tfvars
+
+# Backend config local (copiar desde backend.hcl.example)
+backend.hcl
+*.hcl
+!*.hcl.example
+!.terraform.lock.hcl
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test / coverage
+coverage/
+
+# Docker
+.docker/
