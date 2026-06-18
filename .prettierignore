@@ -1,0 +1,8 @@
+node_modules
+dist
+.turbo
+pnpm-lock.yaml
+packages/database/generated
+iac/**/.terraform
+*.tfstate*
+.agents/
