@@ -36,32 +36,6 @@ resource "aws_s3_bucket_public_access_block" "portal_spa" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_policy" "portal_spa" {
-  bucket = aws_s3_bucket.portal_spa.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Id      = "EnforceHTTPSPolicy"
-    Statement = [
-      {
-        Sid       = "HTTPSOnly"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:*"
-        Resource = [
-          aws_s3_bucket.portal_spa.arn,
-          "${aws_s3_bucket.portal_spa.arn}/*",
-        ]
-        Condition = {
-          Bool = {
-            "aws:SecureTransport" = "false"
-          }
-        }
-      },
-    ]
-  })
-}
-
 resource "aws_s3_bucket_lifecycle_configuration" "portal_spa" {
   bucket = aws_s3_bucket.portal_spa.id
 

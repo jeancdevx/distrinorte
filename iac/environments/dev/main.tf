@@ -329,7 +329,58 @@ module "apigateway" {
   stage_name                  = local.environment
 }
 
-# module "cloudfront" { ... }
+module "cloudfront" {
+  source = "../../modules/cloudfront"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  portal_spa_bucket_name     = module.s3.portal_spa_bucket_name
+  portal_spa_bucket_arn      = module.s3.portal_spa_bucket_arn
+  catalog_images_bucket_name = module.s3.catalog_images_bucket_name
+  catalog_images_bucket_arn  = module.s3.catalog_images_bucket_arn
+
+  api_gateway_rest_api_id = module.apigateway.rest_api_id
+  api_gateway_stage_name  = module.apigateway.stage_name
+  origin_verify_secret    = var.origin_verify_secret
+
+  portal_aliases      = var.cloudfront_portal_aliases
+  api_aliases         = var.cloudfront_api_aliases
+  assets_aliases      = var.cloudfront_assets_aliases
+  acm_certificate_arn = var.cloudfront_acm_certificate_arn
+}
+
+module "waf" {
+  source = "../../modules/waf"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  origin_verify_secret  = var.origin_verify_secret
+  api_gateway_stage_arn = module.apigateway.stage_arn
+}
+
+module "route53" {
+  count  = var.route53_hosted_zone_id != null ? 1 : 0
+  source = "../../modules/route53"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  hosted_zone_id = var.route53_hosted_zone_id
+
+  portal_record_name = var.route53_portal_record_name
+  api_record_name    = var.route53_api_record_name
+  assets_record_name = var.route53_assets_record_name
+
+  portal_cloudfront_domain_name = module.cloudfront.portal_distribution_domain_name
+  api_cloudfront_domain_name    = module.cloudfront.api_distribution_domain_name
+  assets_cloudfront_domain_name = module.cloudfront.assets_distribution_domain_name
+}
 
 # -----------------------------------------------------------------------------
 # Fase 6 — Observabilidad

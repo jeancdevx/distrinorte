@@ -28,6 +28,11 @@ output "stage_invoke_url" {
   value       = aws_api_gateway_stage.main.invoke_url
 }
 
+output "stage_arn" {
+  description = "ARN del stage API Gateway"
+  value       = aws_api_gateway_stage.main.arn
+}
+
 output "authorizer_id" {
   description = "ID del Cognito authorizer"
   value       = aws_api_gateway_authorizer.cognito.id
