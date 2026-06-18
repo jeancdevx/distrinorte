@@ -120,3 +120,33 @@ output "ecs_cluster_arn" {
   description = "ARN del cluster ECS"
   value       = module.ecs_cluster.cluster_arn
 }
+
+output "alb_arn" {
+  description = "ARN del ALB interno"
+  value       = module.alb.alb_arn
+}
+
+output "alb_dns_name" {
+  description = "DNS name del ALB interno"
+  value       = module.alb.alb_dns_name
+}
+
+output "orders_target_group_arn" {
+  description = "Target group ARN de orders-service"
+  value       = module.alb.orders_target_group_arn
+}
+
+output "inventory_target_group_arn" {
+  description = "Target group ARN de inventory-service"
+  value       = module.alb.inventory_target_group_arn
+}
+
+output "catalog_target_group_arn" {
+  description = "Target group ARN de catalog-service"
+  value       = module.alb.catalog_target_group_arn
+}
+
+output "customers_target_group_arn" {
+  description = "Target group ARN de customers-service"
+  value       = module.alb.customers_target_group_arn
+}
