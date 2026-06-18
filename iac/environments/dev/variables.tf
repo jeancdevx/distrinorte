@@ -219,3 +219,21 @@ variable "cognito_logout_urls" {
   type        = list(string)
   default     = ["http://localhost:5173/"]
 }
+
+variable "cloudfront_portal_aliases" {
+  description = "Aliases CloudFront del portal (requiere ACM us-east-1)"
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudfront_api_aliases" {
+  description = "Aliases CloudFront de la API (requiere ACM us-east-1)"
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudfront_assets_aliases" {
+  description = "Aliases CloudFront de assets (requiere ACM us-east-1)"
+  type        = list(string)
+  default     = []
+}
