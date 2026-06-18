@@ -80,3 +80,18 @@ output "redis_port" {
   description = "Puerto Redis"
   value       = module.elasticache.port
 }
+
+output "event_bus_arn" {
+  description = "ARN del EventBridge bus"
+  value       = module.messaging.event_bus_arn
+}
+
+output "inventory_work_queue_url" {
+  description = "URL cola inventory-work"
+  value       = module.messaging.inventory_work_queue_url
+}
+
+output "orders_events_queue_url" {
+  description = "URL cola orders-events"
+  value       = module.messaging.orders_events_queue_url
+}
