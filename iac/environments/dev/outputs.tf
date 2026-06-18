@@ -45,3 +45,13 @@ output "backups_bucket_name" {
   description = "Bucket de backups"
   value       = module.s3.backups_bucket_name
 }
+
+output "products_table_name" {
+  description = "Tabla DynamoDB products"
+  value       = module.dynamodb.products_table_name
+}
+
+output "products_table_arn" {
+  description = "ARN tabla DynamoDB products"
+  value       = module.dynamodb.products_table_arn
+}
