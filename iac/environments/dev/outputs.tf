@@ -110,3 +110,13 @@ output "inventory_task_role_arn" {
   description = "Task role inventory-service"
   value       = module.iam.inventory_task_role_arn
 }
+
+output "ecs_cluster_name" {
+  description = "Nombre del cluster ECS"
+  value       = module.ecs_cluster.cluster_name
+}
+
+output "ecs_cluster_arn" {
+  description = "ARN del cluster ECS"
+  value       = module.ecs_cluster.cluster_arn
+}

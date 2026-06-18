@@ -110,7 +110,14 @@ module "iam" {
   products_table_arn       = module.dynamodb.products_table_arn
 }
 
-# module "ecs_cluster" { ... }
+module "ecs_cluster" {
+  source = "../../modules/ecs-cluster"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+}
+
 # module "alb" { ... }
 # module "orders_service" { source = "../../modules/ecs-service" ... }
 
