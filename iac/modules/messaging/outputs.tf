@@ -33,6 +33,11 @@ output "orders_events_queue_arn" {
   value       = aws_sqs_queue.orders_events.arn
 }
 
+output "orders_events_queue_name" {
+  description = "Nombre de la cola orders-events"
+  value       = aws_sqs_queue.orders_events.name
+}
+
 output "inventory_work_dlq_url" {
   description = "URL de la DLQ inventory-work"
   value       = aws_sqs_queue.inventory_work_dlq.url

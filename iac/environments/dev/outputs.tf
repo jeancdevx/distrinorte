@@ -160,3 +160,8 @@ output "inventory_service_name" {
   description = "Nombre del ECS service inventory-service"
   value       = module.inventory_service.service_name
 }
+
+output "orders_service_name" {
+  description = "Nombre del ECS service orders-service"
+  value       = module.orders_service.service_name
+}
