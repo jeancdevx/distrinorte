@@ -22,6 +22,6 @@ DistriNorte cuenta actualmente con cinco sedes operativas distribuidas en la mac
 
 La empresa emplea actualmente a 680 personas, distribuidas entre personal de almacén, conductores y operarios de reparto, vendedores de campo, personal administrativo y equipos de soporte comercial. La flota de reparto está compuesta por 94 unidades, incluyendo camiones de carga pesada, furgones refrigerados y motocargas para zonas de difícil acceso.
 
-![Infraestructura as is](./.github/diagrama-as-is.png)
+![Infraestructura as is](./img/diagrama-as-is.png)
 
 ---
