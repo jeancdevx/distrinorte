@@ -1,0 +1,25 @@
+{
+  "name": "@distrinorte/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "lint": "oxlint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@distrinorte/config": "workspace:*",
+    "@types/node": "25.9.3",
+    "rolldown": "1.1.1",
+    "typescript": "6.0.3"
+  }
+}
