@@ -71,7 +71,23 @@ module "rds" {
   performance_insights_enabled = var.db_performance_insights_enabled
 }
 
-# module "elasticache" { ... }
+module "elasticache" {
+  source = "../../modules/elasticache"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  data_subnet_ids    = module.networking.data_subnet_ids
+  security_group_ids = [module.security_groups.redis_sg_id]
+
+  engine_version             = var.redis_engine_version
+  node_type                  = var.redis_node_type
+  num_cache_clusters         = var.redis_num_cache_clusters
+  transit_encryption_enabled = var.redis_transit_encryption_enabled
+  auth_token                 = var.redis_auth_token
+  snapshot_retention_limit   = var.redis_snapshot_retention_limit
+}
 
 # -----------------------------------------------------------------------------
 # Fase 3 — Mensajería
