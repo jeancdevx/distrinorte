@@ -89,11 +89,13 @@ module "elasticache" {
   snapshot_retention_limit   = var.redis_snapshot_retention_limit
 }
 
-# -----------------------------------------------------------------------------
-# Fase 3 — Mensajería
-# -----------------------------------------------------------------------------
+module "messaging" {
+  source = "../../modules/messaging"
 
-# module "messaging" { ... }
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+}
 
 # -----------------------------------------------------------------------------
 # Fase 4 — Compute
