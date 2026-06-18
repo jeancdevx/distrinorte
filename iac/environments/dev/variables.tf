@@ -73,3 +73,21 @@ variable "enable_vpc_endpoints" {
   type    = bool
   default = true
 }
+
+variable "s3_force_destroy" {
+  description = "Permitir vaciar buckets S3 al destruir el entorno"
+  type        = bool
+  default     = false
+}
+
+variable "s3_enable_versioning" {
+  description = "Versionado en buckets S3 de aplicacion"
+  type        = bool
+  default     = true
+}
+
+variable "s3_backups_noncurrent_days" {
+  description = "Dias de retencion de versiones no actuales en bucket backups"
+  type        = number
+  default     = 90
+}
