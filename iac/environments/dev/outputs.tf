@@ -190,3 +190,13 @@ output "cognito_issuer_url" {
   description = "Issuer URL para JWT"
   value       = module.cognito.issuer_url
 }
+
+output "api_gateway_invoke_url" {
+  description = "URL base del API Gateway stage"
+  value       = module.apigateway.stage_invoke_url
+}
+
+output "api_gateway_rest_api_id" {
+  description = "ID del REST API"
+  value       = module.apigateway.rest_api_id
+}

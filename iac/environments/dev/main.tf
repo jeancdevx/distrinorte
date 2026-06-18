@@ -314,7 +314,21 @@ module "cognito" {
   logout_urls   = var.cognito_logout_urls
 }
 
-# module "apigateway" { ... }
+module "apigateway" {
+  source = "../../modules/apigateway"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  subnet_ids                  = module.networking.private_subnet_ids
+  vpc_link_security_group_ids = [module.security_groups.vpc_link_sg_id]
+  alb_arn                     = module.alb.alb_arn
+  alb_dns_name                = module.alb.alb_dns_name
+  cognito_user_pool_arn       = module.cognito.user_pool_arn
+  stage_name                  = local.environment
+}
+
 # module "cloudfront" { ... }
 
 # -----------------------------------------------------------------------------
