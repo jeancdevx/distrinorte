@@ -1,0 +1,13 @@
+{
+  "name": "@distrinorte/b2b-portal",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Portal B2B — implementar en fase posterior'",
+    "build": "echo 'Portal B2B — implementar en fase posterior'",
+    "lint": "oxlint src"
+  },
+  "devDependencies": {
+    "@distrinorte/config": "workspace:*"
+  }
+}
