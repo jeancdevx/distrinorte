@@ -1,5 +1,5 @@
-# Copiar a dev.tfvars y actualizar valores (no commitear).
-# cp dev.tfvars.example dev.tfvars
+# Copiar a terraform.tfvars (auto-cargado por Terraform; no commitear).
+# cp dev.tfvars.example terraform.tfvars
 
 aws_region  = "us-east-2"
 aws_profile = "your-sso-profile"
@@ -39,6 +39,14 @@ db_backup_retention_period     = 7
 db_deletion_protection         = false
 db_skip_final_snapshot         = true
 db_performance_insights_enabled = false
+
+# Redis — WARNING: no commitear token real
+redis_auth_token                 = "ChangeMeRedisToken123!"
+redis_engine_version             = "7.1"
+redis_node_type                  = "cache.t4g.micro"
+redis_num_cache_clusters         = 1
+redis_transit_encryption_enabled = true
+redis_snapshot_retention_limit   = 7
 
 tags = {
   ManagedBy = "terraform"
