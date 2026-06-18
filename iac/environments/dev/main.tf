@@ -24,11 +24,18 @@ module "security_groups" {
   vpc_cidr     = module.networking.vpc_cidr
 }
 
-# -----------------------------------------------------------------------------
-# Fase 2 — Datos
-# -----------------------------------------------------------------------------
+module "s3" {
+  source = "../../modules/s3"
 
-# module "s3" { ... }
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  force_destroy           = var.s3_force_destroy
+  enable_versioning       = var.s3_enable_versioning
+  backups_noncurrent_days = var.s3_backups_noncurrent_days
+}
+
 # module "dynamodb" { ... }
 # module "rds" { ... }
 # module "elasticache" { ... }
