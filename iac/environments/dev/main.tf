@@ -129,7 +129,47 @@ module "alb" {
   security_group_ids = [module.security_groups.alb_sg_id]
 }
 
-# module "orders_service" { source = "../../modules/ecs-service" ... }
+module "customers_service" {
+  source = "../../modules/ecs-service"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  service_name = "customers-service"
+  cluster_arn  = module.ecs_cluster.cluster_arn
+  cluster_name = module.ecs_cluster.cluster_name
+
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_sg_id]
+  target_group_arn   = module.alb.customers_target_group_arn
+
+  task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  task_role_arn           = module.iam.customers_task_role_arn
+
+  container_port  = 3004
+  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
+  container_command = [
+    "sh",
+    "-c",
+    "printf '%s\\n' 'server { listen 3004; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+  ]
+
+  environment_variables = {
+    PORT              = "3004"
+    NODE_ENV          = var.environment
+    DATABASE_HOST     = module.rds.endpoint
+    DATABASE_PORT     = tostring(module.rds.port)
+    DATABASE_NAME     = module.rds.db_name
+    DATABASE_USER     = module.rds.username
+    DATABASE_PASSWORD = var.db_password
+  }
+
+  autoscaling_max_capacity = 2
+}
+
+# module "inventory_service" { source = "../../modules/ecs-service" ... }
 
 # -----------------------------------------------------------------------------
 # Fase 5 — Edge
