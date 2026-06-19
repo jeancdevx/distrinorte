@@ -1,9 +1,11 @@
 {
   "extends": "@distrinorte/config/tsconfig.base.json",
   "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "types": ["node"],
-    "outDir": "dist",
-    "rootDir": "src"
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src", "rolldown.config.ts"]
 }
