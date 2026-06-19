@@ -7,17 +7,34 @@ datasource db {
   provider = "postgresql"
 }
 
-// Schema inicial — se expande por dominio en Fase 7
-
 model Customer {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  taxId     String   @unique @map("tax_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  taxId     String    @unique @map("tax_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  accounts  Account[]
   orders    Order[]
 
   @@map("customers")
+}
+
+model Account {
+  id         String        @id @default(uuid())
+  customerId String        @map("customer_id")
+  email      String        @unique
+  status     AccountStatus @default(ACTIVE)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  customer   Customer      @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@map("accounts")
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 model Order {
