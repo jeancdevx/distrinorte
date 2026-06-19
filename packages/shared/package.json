@@ -12,14 +12,20 @@
     }
   },
   "scripts": {
-    "build": "rolldown -c rolldown.config.ts",
+    "build": "rolldown -c rolldown.config.ts && tsc --emitDeclarationOnly -p tsconfig.build.json",
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit"
   },
+  "peerDependencies": {
+    "@nestjs/common": "11.1.27",
+    "rxjs": "7.8.2"
+  },
   "devDependencies": {
     "@distrinorte/config": "workspace:*",
+    "@nestjs/common": "11.1.27",
     "@types/node": "25.9.3",
     "rolldown": "1.1.1",
+    "rxjs": "7.8.2",
     "typescript": "6.0.3"
   }
 }

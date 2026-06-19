@@ -1,9 +1,12 @@
 {
   "extends": "@distrinorte/config/tsconfig.base.json",
   "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "types": ["node"],
-    "outDir": "generated",
-    "rootDir": "."
+    "rootDir": ".",
+    "outDir": "dist"
   },
-  "include": ["prisma.config.ts"]
+  "include": ["src", "generated"]
 }
