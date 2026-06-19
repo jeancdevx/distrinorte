@@ -4,6 +4,13 @@
   "private": true,
   "files": [
     "tsconfig.base.json",
-    "tsconfig.nest.json"
-  ]
+    "tsconfig.nest.json",
+    "tsconfig.paths.json",
+    "tsconfig.rolldown.json",
+    "prettier.json",
+    "oxlint.json"
+  ],
+  "exports": {
+    "./*": "./*"
+  }
 }
