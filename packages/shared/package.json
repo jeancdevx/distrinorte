@@ -3,16 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "rolldown -c rolldown.config.ts && tsc --emitDeclarationOnly -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit"
   },
@@ -24,7 +23,6 @@
     "@distrinorte/config": "workspace:*",
     "@nestjs/common": "11.1.27",
     "@types/node": "25.9.3",
-    "rolldown": "1.1.1",
     "rxjs": "7.8.2",
     "typescript": "6.0.3"
   }

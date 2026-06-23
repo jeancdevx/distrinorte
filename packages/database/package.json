@@ -6,11 +6,12 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "prisma generate",
+    "build": "prisma generate && rolldown -c rolldown.config.ts",
     "lint": "oxlint src prisma.config.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -19,6 +20,7 @@
     "@types/node": "25.9.3",
     "@types/pg": "8.20.0",
     "prisma": "7.8.0",
+    "rolldown": "1.1.1",
     "typescript": "6.0.3"
   },
   "dependencies": {

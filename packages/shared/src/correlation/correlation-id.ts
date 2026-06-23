@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { HttpHeaders } from '@/constants/http-headers.js'
+import { HttpHeaders } from '../constants/http-headers.js'
 
 export function createCorrelationId(): string {
   return randomUUID()
