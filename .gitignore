@@ -58,3 +58,7 @@ coverage/
 
 # Docker
 .docker/
+
+# Docs
+docs/
+results_junitxml.xml
