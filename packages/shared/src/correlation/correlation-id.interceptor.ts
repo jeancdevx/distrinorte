@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common'
 import { Observable } from 'rxjs'
 
-import { HttpHeaders } from '@/constants/http-headers.js'
-
+import { HttpHeaders } from '../constants/http-headers.js'
 import { resolveCorrelationId } from './correlation-id.js'
 
 @Injectable()
