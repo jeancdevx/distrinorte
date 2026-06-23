@@ -4,9 +4,12 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "types": ["node"],
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "declaration": true
   },
   "include": ["src"]
 }
