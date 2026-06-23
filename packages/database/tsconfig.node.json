@@ -1,0 +1,4 @@
+{
+  "extends": "@distrinorte/config/tsconfig.rolldown.json",
+  "include": ["rolldown.config.ts"]
+}
