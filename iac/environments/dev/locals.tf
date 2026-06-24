@@ -24,4 +24,6 @@ locals {
     var.cloudfront_acm_certificate_arn,
     try(module.route53_acm[0].validated_certificate_arn, null),
   )
+
+  catalog_assets_base_url = "https://${var.route53_assets_record_name}"
 }
