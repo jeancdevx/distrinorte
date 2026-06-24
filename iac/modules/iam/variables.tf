@@ -60,6 +60,12 @@ variable "github_oidc_branches" {
   default     = ["develop", "production"]
 }
 
+variable "github_oidc_environments" {
+  description = "GitHub Environments permitidos (claim sub ...:environment:NAME)"
+  type        = list(string)
+  default     = ["dev"]
+}
+
 variable "github_actions_attach_power_user" {
   description = "Adjuntar PowerUserAccess al rol OIDC (terraform apply en dev)"
   type        = bool
