@@ -1,0 +1,23 @@
+{
+  "name": "@distrinorte/seed",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:aws": "tsx src/index.ts",
+    "lint": "oxlint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1075.0",
+    "@aws-sdk/client-s3": "3.1075.0",
+    "@aws-sdk/lib-dynamodb": "3.1075.0",
+    "ioredis": "5.10.0"
+  },
+  "devDependencies": {
+    "@distrinorte/config": "workspace:*",
+    "@types/node": "25.9.3",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3"
+  }
+}
