@@ -40,6 +40,7 @@ terraform.rc
 terraform.tfvars
 *.tfvars
 !*.tfvars.example
+!iac/environments/dev/ci.tfvars
 *.auto.tfvars
 
 # Backend config local (copiar desde backend.hcl.example)
