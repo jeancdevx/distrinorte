@@ -296,6 +296,7 @@ module "catalog_service" {
     REDIS_AUTH_TOKEN        = var.redis_auth_token
     REDIS_TLS               = tostring(var.redis_transit_encryption_enabled)
     CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
+    INVENTORY_SERVICE_BASE_URL = "http://${module.alb.alb_dns_name}/inventory"
   }
 
   autoscaling_max_capacity = 2
