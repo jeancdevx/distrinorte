@@ -137,7 +137,7 @@ variable "autoscaling_cpu_target" {
 }
 
 variable "sqs_queue_name" {
-  description = "Nombre de cola SQS para scaling (inventory-service)"
+  description = "Nombre de cola SQS para target tracking scaling (inventory-service, orders-service)"
   type        = string
   default     = null
   nullable    = true
