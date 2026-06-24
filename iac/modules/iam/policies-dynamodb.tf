@@ -7,6 +7,7 @@ data "aws_iam_policy_document" "catalog_dynamodb" {
       "dynamodb:GetItem",
       "dynamodb:BatchGetItem",
       "dynamodb:Query",
+      "dynamodb:Scan",
     ]
 
     resources = [
