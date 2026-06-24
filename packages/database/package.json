@@ -12,7 +12,10 @@
   },
   "scripts": {
     "build": "prisma generate && rolldown -c rolldown.config.ts",
-    "lint": "oxlint src prisma.config.ts",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "lint": "oxlint src prisma prisma.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -21,11 +24,15 @@
     "@types/pg": "8.20.0",
     "prisma": "7.8.0",
     "rolldown": "1.1.1",
+    "tsx": "4.21.0",
     "typescript": "6.0.3"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
     "pg": "8.21.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
