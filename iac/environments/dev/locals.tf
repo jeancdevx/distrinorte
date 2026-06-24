@@ -20,9 +20,8 @@ locals {
 
   create_acm_certificate = local.edge_dns_enabled && var.cloudfront_acm_certificate_arn == null && length(local.cloudfront_domain_names) > 0
 
-  cloudfront_certificate_arn = coalesce(
-    var.cloudfront_acm_certificate_arn,
-    try(module.route53_acm[0].validated_certificate_arn, null),
+  cloudfront_certificate_arn = var.cloudfront_acm_certificate_arn != null ? var.cloudfront_acm_certificate_arn : (
+    local.create_acm_certificate ? module.route53_acm[0].validated_certificate_arn : null
   )
 
   catalog_assets_base_url = "https://${var.route53_assets_record_name}"
