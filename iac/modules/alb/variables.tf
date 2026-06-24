@@ -42,12 +42,6 @@ variable "ssl_policy" {
   default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
 }
 
-variable "health_check_path" {
-  description = "Health check path for target groups"
-  type        = string
-  default     = "/health"
-}
-
 variable "deregistration_delay" {
   description = "Target deregistration delay in seconds"
   type        = number

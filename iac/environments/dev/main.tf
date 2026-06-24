@@ -153,7 +153,7 @@ module "customers_service" {
   container_command = [
     "sh",
     "-c",
-    "printf '%s\\n' 'server { listen 3004; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+    "printf '%s\\n' 'server { listen 3004; location /customers/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
   ]
 
   environment_variables = {
@@ -193,12 +193,13 @@ module "inventory_service" {
   container_command = [
     "sh",
     "-c",
-    "printf '%s\\n' 'server { listen 3002; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+    "printf '%s\\n' 'server { listen 3002; location /inventory/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
   ]
 
   environment_variables = {
     PORT                     = "3002"
     NODE_ENV                 = var.environment
+    AWS_REGION               = var.aws_region
     DATABASE_HOST            = module.rds.endpoint
     DATABASE_PORT            = tostring(module.rds.port)
     DATABASE_NAME            = module.rds.db_name
@@ -240,12 +241,13 @@ module "orders_service" {
   container_command = [
     "sh",
     "-c",
-    "printf '%s\\n' 'server { listen 3001; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+    "printf '%s\\n' 'server { listen 3001; location /orders/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
   ]
 
   environment_variables = {
     PORT                    = "3001"
     NODE_ENV                = var.environment
+    AWS_REGION              = var.aws_region
     DATABASE_HOST           = module.rds.endpoint
     DATABASE_PORT           = tostring(module.rds.port)
     DATABASE_NAME           = module.rds.db_name
@@ -255,6 +257,7 @@ module "orders_service" {
     ORDERS_EVENTS_QUEUE_URL = module.messaging.orders_events_queue_url
   }
 
+  sqs_queue_name           = module.messaging.orders_events_queue_name
   autoscaling_max_capacity = 2
 }
 
@@ -282,7 +285,7 @@ module "catalog_service" {
   container_command = [
     "sh",
     "-c",
-    "printf '%s\\n' 'server { listen 3003; location /health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
+    "printf '%s\\n' 'server { listen 3003; location /catalog/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
   ]
 
   environment_variables = {
@@ -295,7 +298,7 @@ module "catalog_service" {
     REDIS_PORT              = tostring(module.elasticache.port)
     REDIS_AUTH_TOKEN        = var.redis_auth_token
     REDIS_TLS               = tostring(var.redis_transit_encryption_enabled)
-    CATALOG_IMAGES_BUCKET   = module.s3.catalog_images_bucket_name
+    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
   }
 
   autoscaling_max_capacity = 2
