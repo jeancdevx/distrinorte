@@ -9,7 +9,7 @@ resource "aws_lb_target_group" "service" {
 
   health_check {
     enabled             = true
-    path                = var.health_check_path
+    path                = each.value.health_check_path
     port                = "traffic-port"
     protocol            = "HTTP"
     healthy_threshold   = 2
