@@ -4,7 +4,7 @@ export type PaginationQuery = {
 }
 
 export type PaginatedResult<T> = {
-  data: T[]
+  items: T[]
   page: number
   limit: number
   total: number
@@ -40,7 +40,7 @@ export function toPaginatedResult<T>(
   limit: number
 ): PaginatedResult<T> {
   return {
-    data,
+    items: data,
     page,
     limit,
     total,

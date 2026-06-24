@@ -286,16 +286,17 @@ module "catalog_service" {
   container_image = local.ecr_image["catalog-service"]
 
   environment_variables = {
-    PORT                    = "3003"
-    NODE_ENV                = var.environment
-    AWS_REGION              = var.aws_region
-    DYNAMODB_PRODUCTS_TABLE = module.dynamodb.products_table_name
-    DYNAMODB_CATEGORY_GSI   = module.dynamodb.products_category_gsi_name
-    REDIS_HOST              = module.elasticache.primary_endpoint
-    REDIS_PORT              = tostring(module.elasticache.port)
-    REDIS_AUTH_TOKEN        = var.redis_auth_token
-    REDIS_TLS               = tostring(var.redis_transit_encryption_enabled)
-    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
+    PORT                       = "3003"
+    NODE_ENV                   = var.environment
+    AWS_REGION                 = var.aws_region
+    DYNAMODB_PRODUCTS_TABLE    = module.dynamodb.products_table_name
+    DYNAMODB_CATEGORY_GSI      = module.dynamodb.products_category_gsi_name
+    REDIS_HOST                 = module.elasticache.primary_endpoint
+    REDIS_PORT                 = tostring(module.elasticache.port)
+    REDIS_AUTH_TOKEN           = var.redis_auth_token
+    REDIS_TLS                  = tostring(var.redis_transit_encryption_enabled)
+    CATALOG_ASSETS_BASE_URL    = local.catalog_assets_base_url
+    INVENTORY_SERVICE_BASE_URL = "http://${module.alb.alb_dns_name}/inventory"
   }
 
   autoscaling_max_capacity = 2

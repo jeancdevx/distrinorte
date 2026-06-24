@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 
 import { ProductsRepository } from '../dynamodb/products.repository.js'
+import { InventoryStockClient } from '../inventory/inventory-stock.client.js'
 import { RedisService } from '../redis/redis.service.js'
 import { buildStockCacheKey } from '../redis/stock-cache.js'
 import { buildImageUrl } from './image-url.js'
@@ -19,7 +20,8 @@ export type CatalogProduct = {
 export class CatalogService {
   constructor(
     private readonly products: ProductsRepository,
-    private readonly redis: RedisService
+    private readonly redis: RedisService,
+    private readonly inventory: InventoryStockClient
   ) {}
 
   async listProducts(
@@ -61,15 +63,25 @@ export class CatalogService {
     )
     const stockValues = await this.redis.client.mget(...keys)
 
-    return products.map((product, index) => ({
-      sku: product.sku,
-      name: product.name,
-      price: product.price,
-      category: product.category,
-      imageKey: product.imageKey,
-      imageUrl: buildImageUrl(product.imageKey),
-      stock: parseStockQuantity(stockValues[index])
-    }))
+    return Promise.all(
+      products.map(async (product, index) => {
+        let stock = parseStockQuantity(stockValues[index])
+
+        if (stockValues[index] === null) {
+          stock = await this.inventory.getStock(product.sku, warehouseId)
+        }
+
+        return {
+          sku: product.sku,
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          imageKey: product.imageKey,
+          imageUrl: buildImageUrl(product.imageKey),
+          stock
+        }
+      })
+    )
   }
 }
 

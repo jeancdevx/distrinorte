@@ -47,7 +47,7 @@ resource "aws_lb_listener_rule" "http" {
 
   condition {
     path_pattern {
-      values = [each.value.path_pattern]
+      values = each.value.path_patterns
     }
   }
 }
@@ -65,7 +65,7 @@ resource "aws_lb_listener_rule" "https" {
 
   condition {
     path_pattern {
-      values = [each.value.path_pattern]
+      values = each.value.path_patterns
     }
   }
 }
