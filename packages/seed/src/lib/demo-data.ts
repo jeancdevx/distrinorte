@@ -24,7 +24,3 @@ export function loadDemoProducts(): DemoProductsFile {
   const absolutePath = join(repoRoot, 'data/demo/products.json')
   return JSON.parse(readFileSync(absolutePath, 'utf8')) as DemoProductsFile
 }
-
-export function buildStockCacheKey(sku: string, warehouseId: string): string {
-  return `stock:${sku}:${warehouseId}`
-}
