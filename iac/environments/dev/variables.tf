@@ -305,3 +305,34 @@ variable "route53_assets_record_name" {
   type        = string
   default     = "assets.galaxymorph.com"
 }
+
+variable "container_image_tag" {
+  description = "Tag de imagenes ECR para servicios ECS (ej. git SHA o latest)"
+  type        = string
+  default     = "latest"
+}
+
+variable "enable_github_actions_oidc" {
+  description = "Crear proveedor OIDC + rol IAM para GitHub Actions"
+  type        = bool
+  default     = false
+}
+
+variable "github_repository" {
+  description = "Repositorio GitHub owner/repo para OIDC (requerido si OIDC habilitado)"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "github_oidc_branches" {
+  description = "Branches que pueden asumir el rol OIDC"
+  type        = list(string)
+  default     = ["develop", "production"]
+}
+
+variable "github_actions_attach_power_user" {
+  description = "Adjuntar PowerUserAccess al rol OIDC (terraform apply desde CI)"
+  type        = bool
+  default     = true
+}
