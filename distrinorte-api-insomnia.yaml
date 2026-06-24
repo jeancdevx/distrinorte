@@ -1,0 +1,623 @@
+type: collection.insomnia.rest/5.0
+schema_version: '5.1'
+name: DistriNorte API
+meta:
+  id: wrk_distrinorte_api_001
+  created: 1750752000000
+  modified: 1750752000000
+  description: |
+    Colección para probar la API B2B de DistriNorte (dev).
+
+    ## Antes de empezar
+
+    1. Obtén outputs de Terraform (`iac/environments/dev`):
+       - `cognito_user_pool_id`
+       - `cognito_app_client_id`
+       - `cognito_hosted_ui_base_url`
+    2. Crea usuarios demo en Cognito (ver carpeta **00 Setup**).
+    3. Genera un **Id Token** con AWS CLI y pégalo en `access_token` del environment.
+    4. Selecciona el sub-environment **DistriNorte Dev**.
+
+    ## Base URL
+
+    Por defecto: CloudFront `https://api.pedidos.galaxymorph.com`
+    Alternativa: `api_gateway_invoke_url` (sub-environment **API Gateway directo**).
+
+    ## Autenticación
+
+    API Gateway exige **Cognito JWT** (`Authorization: Bearer <IdToken>`).
+    Los requests heredan Bearer desde el environment `access_token`.
+
+    ## Datos demo (post seed)
+
+    - Bodega El Norte SAC — demo.elnorte@distrinorte.demo — customer_id 11111111-1111-4111-8111-111111111111
+    - Minimarket Sur EIRL — demo.minsur@distrinorte.demo — customer_id 22222222-2222-4222-8222-222222222222
+
+    Almacenes: chiclayo, piura. SKU ejemplo: COCA-600ML.
+
+    ## Respuesta estándar
+
+    ```json
+    { "data": { ... }, "correlationId": "..." }
+    ```
+
+    Errores: `{ "error": { "code": "...", "message": "..." } }`
+collection:
+  - name: '00 Setup'
+    meta:
+      id: fld_distrinorte_setup
+      created: 1750752000001
+      modified: 1750752000001
+      sortKey: -5000
+      description: |
+        ## Crear usuarios Cognito (CLI)
+
+        Reemplaza `POOL_ID` y ejecuta por cada usuario demo.
+
+        ```bash
+        cd iac/environments/dev
+        export POOL_ID="$(terraform output -raw cognito_user_pool_id)"
+        export AWS_REGION=us-east-2
+
+        # Usuario 1 — Bodega El Norte
+        aws cognito-idp admin-create-user \
+          --region "$AWS_REGION" \
+          --user-pool-id "$POOL_ID" \
+          --username "demo.elnorte@distrinorte.demo" \
+          --user-attributes \
+            Name=email,Value=demo.elnorte@distrinorte.demo \
+            Name=email_verified,Value=true \
+            Name=custom:customer_id,Value=11111111-1111-4111-8111-111111111111 \
+          --message-action SUPPRESS
+
+        aws cognito-idp admin-set-user-password \
+          --region "$AWS_REGION" \
+          --user-pool-id "$POOL_ID" \
+          --username "demo.elnorte@distrinorte.demo" \
+          --password 'DistriNorte-Demo-2026!' \
+          --permanent
+
+        # Usuario 2 — Minimarket Sur
+        aws cognito-idp admin-create-user \
+          --region "$AWS_REGION" \
+          --user-pool-id "$POOL_ID" \
+          --username "demo.minsur@distrinorte.demo" \
+          --user-attributes \
+            Name=email,Value=demo.minsur@distrinorte.demo \
+            Name=email_verified,Value=true \
+            Name=custom:customer_id,Value=22222222-2222-4222-8222-222222222222 \
+          --message-action SUPPRESS
+
+        aws cognito-idp admin-set-user-password \
+          --region "$AWS_REGION" \
+          --user-pool-id "$POOL_ID" \
+          --username "demo.minsur@distrinorte.demo" \
+          --password 'DistriNorte-Demo-2026!' \
+          --permanent
+        ```
+
+        ## Obtener Id Token para Insomnia
+
+        Requiere `ALLOW_ADMIN_USER_PASSWORD_AUTH` en el app client (Terraform).
+        Tras `terraform apply`, ejecuta:
+
+        ```bash
+        export CLIENT_ID="$(terraform output -raw cognito_app_client_id)"
+
+        aws cognito-idp admin-initiate-auth \
+          --region "$AWS_REGION" \
+          --user-pool-id "$POOL_ID" \
+          --client-id "$CLIENT_ID" \
+          --auth-flow ADMIN_USER_PASSWORD_AUTH \
+          --auth-parameters \
+            USERNAME=demo.elnorte@distrinorte.demo,PASSWORD='DistriNorte-Demo-2026!' \
+          --query 'AuthenticationResult.IdToken' \
+          --output text
+        ```
+
+        Copia el token en el environment **access_token** (sin prefijo "Bearer ").
+    children:
+      - name: '(leer descripción de la carpeta)'
+        meta:
+          id: req_distrinorte_setup_readme
+          created: 1750752000002
+          modified: 1750752000002
+          isPrivate: false
+          sortKey: -5001
+          description:
+            Esta request es solo documentación. Abre la carpeta **00 Setup** y
+            lee la descripción.
+        method: GET
+        url: '{{ _.base_url }}/catalog/health'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: '01 Health'
+    meta:
+      id: fld_distrinorte_health
+      created: 1750752000100
+      modified: 1750752000100
+      sortKey: -4000
+      description: Health checks vía API Gateway (requieren JWT Cognito).
+    children:
+      - name: Catalog health
+        meta:
+          id: req_health_catalog
+          created: 1750752000101
+          modified: 1750752000101
+          isPrivate: false
+          sortKey: -4001
+          description: 'GET /catalog/health'
+        method: GET
+        url: '{{ _.base_url }}/catalog/health'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Inventory health
+        meta:
+          id: req_health_inventory
+          created: 1750752000102
+          modified: 1750752000102
+          isPrivate: false
+          sortKey: -4002
+        method: GET
+        url: '{{ _.base_url }}/inventory/health'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Orders health
+        meta:
+          id: req_health_orders
+          created: 1750752000103
+          modified: 1750752000103
+          isPrivate: false
+          sortKey: -4003
+        method: GET
+        url: '{{ _.base_url }}/orders/health'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Customers health
+        meta:
+          id: req_health_customers
+          created: 1750752000104
+          modified: 1750752000104
+          isPrivate: false
+          sortKey: -4004
+        method: GET
+        url: '{{ _.base_url }}/customers/health'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: '02 Catalog'
+    meta:
+      id: fld_distrinorte_catalog
+      created: 1750752000200
+      modified: 1750752000200
+      sortKey: -3000
+      description: |
+        Catálogo DynamoDB + stock Redis.
+        `warehouseId` es obligatorio. Solo productos `active: true` (24 de 25 en demo).
+    children:
+      - name: List products (chiclayo)
+        meta:
+          id: req_catalog_products_chiclayo
+          created: 1750752000201
+          modified: 1750752000201
+          isPrivate: false
+          sortKey: -3001
+          description: |
+            Lista paginada de productos con stock para el almacén indicado.
+
+            Query params:
+            - `warehouseId` (requerido): chiclayo | piura
+            - `page`, `limit` (opcional, defaults en shared pagination)
+            - `category` (opcional): bebidas, abarrotes, etc.
+        method: GET
+        url: '{{ _.base_url }}/catalog/products'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        parameters:
+          - name: warehouseId
+            value: '{{ _.warehouse_id }}'
+            disabled: false
+          - name: page
+            value: '1'
+            disabled: false
+          - name: limit
+            value: '10'
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: List products — filter category bebidas
+        meta:
+          id: req_catalog_products_bebidas
+          created: 1750752000202
+          modified: 1750752000202
+          isPrivate: false
+          sortKey: -3002
+        method: GET
+        url: '{{ _.base_url }}/catalog/products'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        parameters:
+          - name: warehouseId
+            value: '{{ _.warehouse_id }}'
+          - name: category
+            value: bebidas
+          - name: page
+            value: '1'
+          - name: limit
+            value: '20'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: List products (piura)
+        meta:
+          id: req_catalog_products_piura
+          created: 1750752000203
+          modified: 1750752000203
+          isPrivate: false
+          sortKey: -3003
+        method: GET
+        url: '{{ _.base_url }}/catalog/products'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        parameters:
+          - name: warehouseId
+            value: piura
+          - name: page
+            value: '1'
+          - name: limit
+            value: '10'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: '03 Inventory'
+    meta:
+      id: fld_distrinorte_inventory
+      created: 1750752000300
+      modified: 1750752000300
+      sortKey: -2000
+      description: Stock puntual por SKU y almacén (RDS + cache Redis).
+    children:
+      - name: Get stock by SKU
+        meta:
+          id: req_inventory_stock
+          created: 1750752000301
+          modified: 1750752000301
+          isPrivate: false
+          sortKey: -2001
+          description: |
+            `GET /inventory/stock/:sku?warehouseId=...`
+
+            Ejemplo: COCA-600ML en chiclayo (240 unidades tras seed).
+        method: GET
+        url: '{{ _.base_url }}/inventory/stock/{{ _.demo_sku }}'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        parameters:
+          - name: warehouseId
+            value: '{{ _.warehouse_id }}'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: '04 Orders'
+    meta:
+      id: fld_distrinorte_orders
+      created: 1750752000400
+      modified: 1750752000400
+      sortKey: -1000
+      description: |
+        Crear pedido async (202). Requiere header `idempotency-key`.
+        `customerId` debe existir en RDS (clientes del seed).
+        Tras 202, inventory confirma stock vía EventBridge → estado CONFIRMED.
+    children:
+      - name: Create order (demo)
+        meta:
+          id: req_orders_create_demo
+          created: 1750752000401
+          modified: 1750752000401
+          isPrivate: false
+          sortKey: -1001
+          description: |
+            Pedido demo con Bodega El Norte y 2× COCA-600ML.
+
+            Cambia `idempotency-key` en cada pedido nuevo (o usa el environment `idempotency_key`).
+            Re-enviar el mismo key devuelve el pedido existente (idempotencia).
+        method: POST
+        url: '{{ _.base_url }}/orders'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: idempotency-key
+            value: '{{ _.idempotency_key }}'
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "customerId": "{{ _.demo_customer_id }}",
+              "warehouseId": "{{ _.warehouse_id }}",
+              "lines": [
+                { "sku": "{{ _.demo_sku }}", "quantity": 2 }
+              ]
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Create order — segundo cliente
+        meta:
+          id: req_orders_create_minsur
+          created: 1750752000402
+          modified: 1750752000402
+          isPrivate: false
+          sortKey: -1002
+        method: POST
+        url: '{{ _.base_url }}/orders'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: idempotency-key
+            value: "demo-order-minsur-{% uuid 'v4' %}"
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "customerId": "{{ _.demo_customer_id_2 }}",
+              "warehouseId": "piura",
+              "lines": [
+                { "sku": "INCA-600ML", "quantity": 1 },
+                { "sku": "AGUA-SIN-GAS-625", "quantity": 3 }
+              ]
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: '05 Customers'
+    meta:
+      id: fld_distrinorte_customers
+      created: 1750752000500
+      modified: 1750752000500
+      sortKey: -500
+      description:
+        Gestión de clientes B2B en RDS. El seed ya creó 2 clientes demo.
+    children:
+      - name: List customers
+        meta:
+          id: req_customers_list
+          created: 1750752000501
+          modified: 1750752000501
+          isPrivate: false
+          sortKey: -501
+        method: GET
+        url: '{{ _.base_url }}/customers'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        parameters:
+          - name: page
+            value: '1'
+          - name: limit
+            value: '20'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Create customer
+        meta:
+          id: req_customers_create
+          created: 1750752000502
+          modified: 1750752000502
+          isPrivate: false
+          sortKey: -502
+          description: |
+            Crea cliente + cuenta. `taxId` (RUC) debe ser único.
+            Luego crea usuario Cognito con `custom:customer_id` = `id` devuelto.
+        method: POST
+        url: '{{ _.base_url }}/customers'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Cliente Prueba API",
+              "taxId": "20111222333",
+              "email": "prueba.api@distrinorte.demo"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_distrinorte_default
+    created: 1750752000000
+    modified: 1750752000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_distrinorte_base
+    created: 1750752000000
+    modified: 1750752000000
+    isPrivate: false
+  data:
+    base_url: https://api.pedidos.galaxymorph.com
+    aws_region: us-east-2
+    cognito_user_pool_id: REEMPLAZAR_con_terraform_output
+    cognito_client_id: REEMPLAZAR_con_terraform_output
+    cognito_hosted_ui_base_url: https://distrinorte-dev.auth.us-east-2.amazoncognito.com
+    access_token: PEGAR_IdToken_aqui
+    demo_email: demo.elnorte@distrinorte.demo
+    demo_password: DistriNorte-Demo-2026!
+    demo_customer_id: 11111111-1111-4111-8111-111111111111
+    demo_customer_id_2: 22222222-2222-4222-8222-222222222222
+    warehouse_id: chiclayo
+    demo_sku: COCA-600ML
+    idempotency_key: demo-order-001
+  subEnvironments:
+    - name: DistriNorte Dev
+      meta:
+        id: env_distrinorte_dev
+        created: 1750752000001
+        modified: 1750752000001
+        isPrivate: false
+      data:
+        base_url: https://api.pedidos.galaxymorph.com
+        aws_region: us-east-2
+        cognito_user_pool_id: REEMPLAZAR_con_terraform_output
+        cognito_client_id: REEMPLAZAR_con_terraform_output
+        cognito_hosted_ui_base_url: https://distrinorte-dev.auth.us-east-2.amazoncognito.com
+        access_token: PEGAR_IdToken_aqui
+        demo_email: demo.elnorte@distrinorte.demo
+        demo_password: DistriNorte-Demo-2026!
+        demo_customer_id: 11111111-1111-4111-8111-111111111111
+        demo_customer_id_2: 22222222-2222-4222-8222-222222222222
+        warehouse_id: chiclayo
+        demo_sku: COCA-600ML
+        idempotency_key: demo-order-001
+    - name: API Gateway directo
+      meta:
+        id: env_distrinorte_apigw
+        created: 1750752000002
+        modified: 1750752000002
+        isPrivate: false
+      data:
+        base_url: REEMPLAZAR_api_gateway_invoke_url
+        access_token: PEGAR_IdToken_aqui
+        demo_customer_id: 11111111-1111-4111-8111-111111111111
+        demo_customer_id_2: 22222222-2222-4222-8222-222222222222
+        warehouse_id: chiclayo
+        demo_sku: COCA-600ML
+        idempotency_key: demo-order-001
