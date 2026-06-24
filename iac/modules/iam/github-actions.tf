@@ -112,8 +112,8 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "EcsPassRoles"
-    effect = "Allow"
+    sid     = "EcsPassRoles"
+    effect  = "Allow"
     actions = ["iam:PassRole"]
     resources = [
       aws_iam_role.ecs_task_execution.arn,
