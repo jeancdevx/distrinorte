@@ -73,6 +73,14 @@ cloudfront_assets_aliases = ["assets.galaxymorph.com"]
 cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
 cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
 
+# ECR / CI-CD (Fase C)
+container_image_tag = "latest"
+
+enable_github_actions_oidc     = true
+github_repository              = "jeancdevx/distrinorte"
+github_oidc_branches           = ["develop", "production"]
+github_actions_attach_power_user = true
+
 tags = {
   ManagedBy = "terraform"
   Project   = "distrinorte"

@@ -33,3 +33,42 @@ variable "products_table_arn" {
   description = "ARN tabla DynamoDB products"
   type        = string
 }
+
+variable "catalog_images_bucket_arn" {
+  description = "ARN bucket S3 de imagenes de catalogo (seed-runner)"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "github_repository" {
+  description = "Repositorio GitHub owner/repo para OIDC (ej. org/distrinorte)"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "enable_github_actions_oidc" {
+  description = "Crear rol IAM OIDC para GitHub Actions"
+  type        = bool
+  default     = false
+}
+
+variable "github_oidc_branches" {
+  description = "Branches permitidos para asumir el rol OIDC"
+  type        = list(string)
+  default     = ["develop", "production"]
+}
+
+variable "github_actions_attach_power_user" {
+  description = "Adjuntar PowerUserAccess al rol OIDC (terraform apply en dev)"
+  type        = bool
+  default     = true
+}
+
+variable "ecr_repository_arns" {
+  description = "ARNs de repositorios ECR para push desde CI"
+  type        = list(string)
+  default     = []
+}
+

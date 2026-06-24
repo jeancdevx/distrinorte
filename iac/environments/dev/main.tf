@@ -97,6 +97,14 @@ module "messaging" {
   tags         = local.common_tags
 }
 
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+}
+
 module "iam" {
   source = "../../modules/iam"
 
@@ -108,6 +116,13 @@ module "iam" {
   inventory_work_queue_arn = module.messaging.inventory_work_queue_arn
   orders_events_queue_arn  = module.messaging.orders_events_queue_arn
   products_table_arn       = module.dynamodb.products_table_arn
+  catalog_images_bucket_arn = module.s3.catalog_images_bucket_arn
+
+  ecr_repository_arns        = values(module.ecr.repository_arns)
+  enable_github_actions_oidc = var.enable_github_actions_oidc
+  github_repository          = var.github_repository
+  github_oidc_branches       = var.github_oidc_branches
+  github_actions_attach_power_user = var.github_actions_attach_power_user
 }
 
 module "ecs_cluster" {
@@ -149,12 +164,7 @@ module "customers_service" {
   task_role_arn           = module.iam.customers_task_role_arn
 
   container_port  = 3004
-  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
-  container_command = [
-    "sh",
-    "-c",
-    "printf '%s\\n' 'server { listen 3004; location /customers/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
-  ]
+  container_image = local.ecr_image["customers-service"]
 
   environment_variables = {
     PORT              = "3004"
@@ -189,12 +199,7 @@ module "inventory_service" {
   task_role_arn           = module.iam.inventory_task_role_arn
 
   container_port  = 3002
-  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
-  container_command = [
-    "sh",
-    "-c",
-    "printf '%s\\n' 'server { listen 3002; location /inventory/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
-  ]
+  container_image = local.ecr_image["inventory-service"]
 
   environment_variables = {
     PORT                     = "3002"
@@ -237,12 +242,7 @@ module "orders_service" {
   task_role_arn           = module.iam.orders_task_role_arn
 
   container_port  = 3001
-  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
-  container_command = [
-    "sh",
-    "-c",
-    "printf '%s\\n' 'server { listen 3001; location /orders/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
-  ]
+  container_image = local.ecr_image["orders-service"]
 
   environment_variables = {
     PORT                    = "3001"
@@ -281,12 +281,7 @@ module "catalog_service" {
   task_role_arn           = module.iam.catalog_task_role_arn
 
   container_port  = 3003
-  container_image = "public.ecr.aws/nginx/nginx:stable-alpine"
-  container_command = [
-    "sh",
-    "-c",
-    "printf '%s\\n' 'server { listen 3003; location /catalog/health { add_header Content-Type text/plain; return 200 \"ok\"; } location / { add_header Content-Type text/plain; return 200 \"placeholder\"; } }' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'",
-  ]
+  container_image = local.ecr_image["catalog-service"]
 
   environment_variables = {
     PORT                    = "3003"
@@ -302,6 +297,27 @@ module "catalog_service" {
   }
 
   autoscaling_max_capacity = 2
+}
+
+module "seed_runner_task" {
+  source = "../../modules/ecs-task"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  task_family     = "${local.name_prefix}-seed-runner"
+  container_name  = "seed-runner"
+  container_image = local.ecr_image["seed-runner"]
+
+  task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  task_role_arn           = module.iam.seed_runner_task_role_arn
+
+  cpu    = 512
+  memory = 1024
+
+  environment_variables = local.seed_runner_environment
 }
 
 

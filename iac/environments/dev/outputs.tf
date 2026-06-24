@@ -245,3 +245,18 @@ output "acm_certificate_arn" {
   description = "ARN del certificado ACM CloudFront (us-east-1)"
   value       = local.cloudfront_certificate_arn
 }
+
+output "ecr_repository_urls" {
+  description = "URLs de repositorios ECR"
+  value       = module.ecr.repository_urls
+}
+
+output "seed_runner_task_definition_arn" {
+  description = "ARN de la task definition seed-runner"
+  value       = module.seed_runner_task.task_definition_arn
+}
+
+output "github_actions_role_arn" {
+  description = "Rol OIDC para GitHub Actions"
+  value       = module.iam.github_actions_role_arn
+}
