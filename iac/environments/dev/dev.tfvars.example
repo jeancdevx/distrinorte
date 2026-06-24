@@ -78,7 +78,8 @@ container_image_tag = "latest"
 
 enable_github_actions_oidc     = true
 github_repository              = "jeancdevx/distrinorte"
-github_oidc_branches           = ["develop", "production"]
+github_oidc_branches             = ["develop", "production"]
+github_oidc_environments         = ["dev"]
 github_actions_attach_power_user = true
 
 tags = {

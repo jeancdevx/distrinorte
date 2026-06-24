@@ -16,6 +16,7 @@ permissions:
   contents: read
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   AWS_REGION: us-east-2
   TF_IN_AUTOMATION: true
   TF_VAR_environment: dev
@@ -26,26 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
 
       - name: Build and push images
         env:
@@ -67,7 +59,7 @@ jobs:
           docker tag "${seed_image}" "${ECR_REGISTRY}/distrinorte-dev-seed-runner:latest"
           docker push "${ECR_REGISTRY}/distrinorte-dev-seed-runner:latest"
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
           terraform_version: 1.11.4
 
@@ -115,6 +107,7 @@ jobs:
 
       - name: Force ECS rolling deploy
         run: |
+          set -euo pipefail
           for service in customers-service inventory-service orders-service catalog-service; do
             aws ecs update-service \
               --cluster distrinorte-dev-cluster \

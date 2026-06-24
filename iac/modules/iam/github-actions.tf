@@ -46,10 +46,16 @@ data "aws_iam_policy_document" "github_actions_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        for branch in var.github_oidc_branches :
-        "repo:${var.github_repository}:ref:refs/heads/${branch}"
-      ]
+      values = concat(
+        [
+          for branch in var.github_oidc_branches :
+          "repo:${var.github_repository}:ref:refs/heads/${branch}"
+        ],
+        [
+          for environment in var.github_oidc_environments :
+          "repo:${var.github_repository}:environment:${environment}"
+        ],
+      )
     }
   }
 }
@@ -106,8 +112,8 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "EcsPassRoles"
-    effect = "Allow"
+    sid     = "EcsPassRoles"
+    effect  = "Allow"
     actions = ["iam:PassRole"]
     resources = [
       aws_iam_role.ecs_task_execution.arn,
