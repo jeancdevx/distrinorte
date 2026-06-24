@@ -1,3 +1,10 @@
+export {
+  STOCK_CACHE_RECONCILE_INTERVAL_ENV,
+  STOCK_CACHE_TTL_ENV,
+  buildStockCacheKey,
+  resolveStockCacheReconcileIntervalSeconds,
+  resolveStockCacheTtlSeconds
+} from './cache/stock-cache.js'
 export { HttpHeaders, type HttpHeaderName } from './constants/http-headers.js'
 export { CorrelationIdInterceptor } from './correlation/correlation-id.interceptor.js'
 export {
