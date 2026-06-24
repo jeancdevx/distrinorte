@@ -35,12 +35,16 @@ data "aws_iam_policy_document" "seed_runner" {
       effect = "Allow"
 
       actions = [
+        "s3:ListBucket",
         "s3:PutObject",
         "s3:HeadObject",
         "s3:GetObject",
       ]
 
-      resources = ["${var.catalog_images_bucket_arn}/*"]
+      resources = [
+        var.catalog_images_bucket_arn,
+        "${var.catalog_images_bucket_arn}/*",
+      ]
     }
   }
 }
