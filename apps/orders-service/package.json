@@ -2,6 +2,7 @@
   "name": "@distrinorte/orders-service",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
@@ -10,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-eventbridge": "3.1075.0",
+    "@aws-sdk/client-sqs": "3.1075.0",
     "@distrinorte/database": "workspace:*",
     "@distrinorte/events": "workspace:*",
     "@distrinorte/shared": "workspace:*",
