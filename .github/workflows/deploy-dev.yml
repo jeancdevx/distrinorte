@@ -63,6 +63,18 @@ jobs:
         with:
           terraform_version: 1.11.4
 
+      - name: Verify Terraform permissions on GitHub Actions role
+        run: |
+          set -euo pipefail
+          if ! aws iam get-role \
+            --role-name distrinorte-dev-ecs-task-execution \
+            --query 'Role.RoleName' \
+            --output text >/dev/null 2>&1; then
+            echo "::error::El rol de GitHub Actions no puede leer IAM (falta PowerUserAccess)."
+            echo "Bootstrap una vez en local: cd iac/environments/dev && terraform apply"
+            exit 1
+          fi
+
       - name: Terraform apply
         working-directory: iac/environments/dev
         env:
@@ -71,8 +83,7 @@ jobs:
           TF_VAR_origin_verify_secret:
             ${{ secrets.TF_VAR_origin_verify_secret }}
           TF_VAR_container_image_tag: ${{ github.sha }}
-          TF_VAR_enable_github_actions_oidc: true
-          TF_VAR_github_repository: ${{ github.repository }}
+          TF_VAR_terraform_state_bucket: ${{ secrets.TF_STATE_BUCKET }}
         run: |
           terraform init -input=false \
             -backend-config=backend.ci.hcl \
@@ -110,7 +121,7 @@ jobs:
       - name: Force ECS rolling deploy
         run: |
           set -euo pipefail
-          for service in customers-service inventory-service orders-service catalog-service; do
+          for service in distrinorte-dev-customers-service distrinorte-dev-inventory-service distrinorte-dev-orders-service distrinorte-dev-catalog-service; do
             aws ecs update-service \
               --cluster distrinorte-dev-cluster \
               --service "${service}" \
