@@ -74,7 +74,9 @@ jobs:
           TF_VAR_enable_github_actions_oidc: true
           TF_VAR_github_repository: ${{ github.repository }}
         run: |
-          terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+          terraform init -input=false \
+            -backend-config=backend.ci.hcl \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
           terraform apply -auto-approve -input=false
 
       - name: Run seed task on ECS
