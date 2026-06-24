@@ -218,6 +218,7 @@ module "inventory_service" {
     REDIS_TLS                = tostring(var.redis_transit_encryption_enabled)
     EVENT_BUS_NAME           = module.messaging.event_bus_name
     INVENTORY_WORK_QUEUE_URL = module.messaging.inventory_work_queue_url
+    STOCK_CACHE_RECONCILE_INTERVAL_SECONDS = "3600"
   }
 
   sqs_queue_name           = module.messaging.inventory_work_queue_name
@@ -295,8 +296,7 @@ module "catalog_service" {
     REDIS_PORT                 = tostring(module.elasticache.port)
     REDIS_AUTH_TOKEN           = var.redis_auth_token
     REDIS_TLS                  = tostring(var.redis_transit_encryption_enabled)
-    CATALOG_ASSETS_BASE_URL    = local.catalog_assets_base_url
-    INVENTORY_SERVICE_BASE_URL = "http://${module.alb.alb_dns_name}/inventory"
+    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
   }
 
   autoscaling_max_capacity = 2
