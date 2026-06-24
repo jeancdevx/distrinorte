@@ -1,0 +1,230 @@
+{
+  "warehouses": ["chiclayo", "piura"],
+  "products": [
+    {
+      "sku": "COCA-600ML",
+      "name": "Coca-Cola 600 ml",
+      "price": 2.5,
+      "category": "bebidas",
+      "imageKey": "products/coca-600ml.jpg",
+      "active": true,
+      "stock": { "chiclayo": 240, "piura": 180 }
+    },
+    {
+      "sku": "INCA-600ML",
+      "name": "Inca Kola 600 ml",
+      "price": 2.5,
+      "category": "bebidas",
+      "imageKey": "products/inca-600ml.jpg",
+      "active": true,
+      "stock": { "chiclayo": 200, "piura": 160 }
+    },
+    {
+      "sku": "AGUA-SIN-GAS-625",
+      "name": "Agua sin gas 625 ml",
+      "price": 1.2,
+      "category": "bebidas",
+      "imageKey": "products/agua-sin-gas-625.jpg",
+      "active": true,
+      "stock": { "chiclayo": 500, "piura": 420 }
+    },
+    {
+      "sku": "JUGO-DURAZNO-1L",
+      "name": "Jugo de durazno 1 L",
+      "price": 4.8,
+      "category": "bebidas",
+      "imageKey": "products/jugo-durazno-1l.jpg",
+      "active": true,
+      "stock": { "chiclayo": 90, "piura": 75 }
+    },
+    {
+      "sku": "CERVEZA-PILSEN-330",
+      "name": "Cerveza Pilsen 330 ml",
+      "price": 3.2,
+      "category": "bebidas",
+      "imageKey": "products/cerveza-pilsen-330.jpg",
+      "active": true,
+      "stock": { "chiclayo": 120, "piura": 100 }
+    },
+    {
+      "sku": "ARROZ-COSTENO-1KG",
+      "name": "Arroz costeño 1 kg",
+      "price": 4.5,
+      "category": "abarrotes",
+      "imageKey": "products/arroz-costeno-1kg.jpg",
+      "active": true,
+      "stock": { "chiclayo": 300, "piura": 280 }
+    },
+    {
+      "sku": "AZUCAR-RUBIA-1KG",
+      "name": "Azúcar rubia 1 kg",
+      "price": 3.9,
+      "category": "abarrotes",
+      "imageKey": "products/azucar-rubia-1kg.jpg",
+      "active": true,
+      "stock": { "chiclayo": 180, "piura": 150 }
+    },
+    {
+      "sku": "ACEITE-VEGETAL-1L",
+      "name": "Aceite vegetal 1 L",
+      "price": 9.5,
+      "category": "abarrotes",
+      "imageKey": "products/aceite-vegetal-1l.jpg",
+      "active": true,
+      "stock": { "chiclayo": 140, "piura": 110 }
+    },
+    {
+      "sku": "ATUN-EN-LATA-170",
+      "name": "Atún en lata 170 g",
+      "price": 5.2,
+      "category": "abarrotes",
+      "imageKey": "products/atun-en-lata-170.jpg",
+      "active": true,
+      "stock": { "chiclayo": 220, "piura": 190 }
+    },
+    {
+      "sku": "LECHE-EVAP-400",
+      "name": "Leche evaporada 400 g",
+      "price": 4.1,
+      "category": "abarrotes",
+      "imageKey": "products/leche-evap-400.jpg",
+      "active": true,
+      "stock": { "chiclayo": 160, "piura": 130 }
+    },
+    {
+      "sku": "FIDEOS-SPAGHETTI-1KG",
+      "name": "Fideos spaghetti 1 kg",
+      "price": 3.6,
+      "category": "abarrotes",
+      "imageKey": "products/fideos-spaghetti-1kg.jpg",
+      "active": true,
+      "stock": { "chiclayo": 210, "piura": 175 }
+    },
+    {
+      "sku": "DETERGENTE-LIQ-1L",
+      "name": "Detergente líquido 1 L",
+      "price": 8.9,
+      "category": "limpieza",
+      "imageKey": "products/detergente-liq-1l.jpg",
+      "active": true,
+      "stock": { "chiclayo": 95, "piura": 80 }
+    },
+    {
+      "sku": "CLORO-1L",
+      "name": "Cloro 1 L",
+      "price": 3.4,
+      "category": "limpieza",
+      "imageKey": "products/cloro-1l.jpg",
+      "active": true,
+      "stock": { "chiclayo": 130, "piura": 115 }
+    },
+    {
+      "sku": "JABON-LAVANDERIA-400",
+      "name": "Jabón de lavandería 400 g",
+      "price": 2.8,
+      "category": "limpieza",
+      "imageKey": "products/jabon-lavanderia-400.jpg",
+      "active": true,
+      "stock": { "chiclayo": 170, "piura": 145 }
+    },
+    {
+      "sku": "PAPEL-HIG-4ROLL",
+      "name": "Papel higiénico 4 rollos",
+      "price": 6.5,
+      "category": "limpieza",
+      "imageKey": "products/papel-hig-4roll.jpg",
+      "active": true,
+      "stock": { "chiclayo": 110, "piura": 95 }
+    },
+    {
+      "sku": "SHAMPOO-400ML",
+      "name": "Shampoo 400 ml",
+      "price": 7.2,
+      "category": "higiene",
+      "imageKey": "products/shampoo-400ml.jpg",
+      "active": true,
+      "stock": { "chiclayo": 85, "piura": 70 }
+    },
+    {
+      "sku": "PASTA-DENTAL-90",
+      "name": "Pasta dental 90 g",
+      "price": 4.3,
+      "category": "higiene",
+      "imageKey": "products/pasta-dental-90.jpg",
+      "active": true,
+      "stock": { "chiclayo": 150, "piura": 125 }
+    },
+    {
+      "sku": "DESODORANTE-150",
+      "name": "Desodorante 150 ml",
+      "price": 9.8,
+      "category": "higiene",
+      "imageKey": "products/desodorante-150.jpg",
+      "active": true,
+      "stock": { "chiclayo": 75, "piura": 60 }
+    },
+    {
+      "sku": "GALLETAS-SODA-6PCK",
+      "name": "Galletas soda pack x6",
+      "price": 3.1,
+      "category": "snacks",
+      "imageKey": "products/galletas-soda-6pck.jpg",
+      "active": true,
+      "stock": { "chiclayo": 190, "piura": 165 }
+    },
+    {
+      "sku": "PAPAS-LAY-150",
+      "name": "Papas fritas 150 g",
+      "price": 4.6,
+      "category": "snacks",
+      "imageKey": "products/papas-lay-150.jpg",
+      "active": true,
+      "stock": { "chiclayo": 140, "piura": 120 }
+    },
+    {
+      "sku": "CHOCOLATE-SOLUBLE-180",
+      "name": "Chocolate soluble 180 g",
+      "price": 5.9,
+      "category": "snacks",
+      "imageKey": "products/chocolate-soluble-180.jpg",
+      "active": true,
+      "stock": { "chiclayo": 100, "piura": 88 }
+    },
+    {
+      "sku": "YOGURT-FRESA-1KG",
+      "name": "Yogurt fresa 1 kg",
+      "price": 8.4,
+      "category": "lacteos",
+      "imageKey": "products/yogurt-fresa-1kg.jpg",
+      "active": true,
+      "stock": { "chiclayo": 65, "piura": 55 }
+    },
+    {
+      "sku": "QUESO-FRESCO-500",
+      "name": "Queso fresco 500 g",
+      "price": 12.5,
+      "category": "lacteos",
+      "imageKey": "products/queso-fresco-500.jpg",
+      "active": true,
+      "stock": { "chiclayo": 45, "piura": 40 }
+    },
+    {
+      "sku": "MANTEQUILLA-200",
+      "name": "Mantequilla 200 g",
+      "price": 6.8,
+      "category": "lacteos",
+      "imageKey": "products/mantequilla-200.jpg",
+      "active": true,
+      "stock": { "chiclayo": 70, "piura": 58 }
+    },
+    {
+      "sku": "PRODUCTO-INACTIVO-DEMO",
+      "name": "Producto inactivo (no debe listarse)",
+      "price": 1.0,
+      "category": "demo",
+      "imageKey": "products/producto-inactivo-demo.jpg",
+      "active": false,
+      "stock": { "chiclayo": 999, "piura": 999 }
+    }
+  ]
+}
