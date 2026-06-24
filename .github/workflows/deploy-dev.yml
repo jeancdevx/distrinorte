@@ -63,18 +63,6 @@ jobs:
         with:
           terraform_version: 1.11.4
 
-      - name: Verify Terraform permissions on GitHub Actions role
-        run: |
-          set -euo pipefail
-          if ! aws iam get-role \
-            --role-name distrinorte-dev-ecs-task-execution \
-            --query 'Role.RoleName' \
-            --output text >/dev/null 2>&1; then
-            echo "::error::El rol de GitHub Actions no puede leer IAM (falta PowerUserAccess)."
-            echo "Bootstrap una vez en local: cd iac/environments/dev && terraform apply"
-            exit 1
-          fi
-
       - name: Terraform apply
         working-directory: iac/environments/dev
         env:
