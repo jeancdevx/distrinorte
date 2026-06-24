@@ -164,6 +164,12 @@ importers:
 
   apps/orders-service:
     dependencies:
+      '@aws-sdk/client-eventbridge':
+        specifier: 3.1075.0
+        version: 3.1075.0
+      '@aws-sdk/client-sqs':
+        specifier: 3.1075.0
+        version: 3.1075.0
       '@distrinorte/database':
         specifier: workspace:*
         version: link:../../packages/database
