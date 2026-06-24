@@ -1,8 +1,6 @@
 import { defineConfig } from 'prisma/config'
 
-const databaseUrl =
-  process.env.DATABASE_URL ??
-  'postgresql://user:password@localhost:5432/distrinorte?schema=public'
+import { resolveDatabaseUrl } from './src/database-url.js'
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -10,6 +8,6 @@ export default defineConfig({
     path: 'prisma/migrations'
   },
   datasource: {
-    url: databaseUrl
+    url: resolveDatabaseUrl()
   }
 })
