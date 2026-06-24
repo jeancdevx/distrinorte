@@ -12,6 +12,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "typecheck": "turbo run typecheck",
+    "db:migrate:deploy": "pnpm --filter @distrinorte/database db:migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @distrinorte/database db:migrate:dev",
+    "db:seed": "pnpm --filter @distrinorte/database db:seed",
+    "seed:aws": "pnpm --filter @distrinorte/seed seed:aws",
+    "seed:demo": "pnpm db:seed && pnpm seed:aws",
     "prepare": "husky"
   },
   "lint-staged": {
