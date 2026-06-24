@@ -12,6 +12,8 @@
     "@aws-sdk/client-dynamodb": "3.1075.0",
     "@aws-sdk/client-s3": "3.1075.0",
     "@aws-sdk/lib-dynamodb": "3.1075.0",
+    "@distrinorte/database": "workspace:*",
+    "@distrinorte/shared": "workspace:*",
     "ioredis": "5.10.0"
   },
   "devDependencies": {
