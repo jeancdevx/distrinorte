@@ -121,7 +121,8 @@ module "iam" {
   ecr_repository_arns        = values(module.ecr.repository_arns)
   enable_github_actions_oidc = var.enable_github_actions_oidc
   github_repository          = var.github_repository
-  github_oidc_branches       = var.github_oidc_branches
+  github_oidc_branches           = var.github_oidc_branches
+  github_oidc_environments     = var.github_oidc_environments
   github_actions_attach_power_user = var.github_actions_attach_power_user
 }
 
