@@ -1,4 +1,4 @@
-aws_region  = "us-east-2"
+aws_region   = "us-east-2"
 project_name = "distrinorte"
 environment  = "dev"
 
