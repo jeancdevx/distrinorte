@@ -46,6 +46,7 @@ terraform.tfvars
 backend.hcl
 *.hcl
 !*.hcl.example
+!*.ci.hcl
 !.terraform.lock.hcl
 
 # Logs
