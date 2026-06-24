@@ -145,6 +145,25 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     ]
     resources = ["*"]
   }
+
+  dynamic "statement" {
+    for_each = var.terraform_state_bucket != null ? [1] : []
+
+    content {
+      sid    = "TerraformState"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+      ]
+      resources = [
+        "arn:aws:s3:::${var.terraform_state_bucket}",
+        "arn:aws:s3:::${var.terraform_state_bucket}/*",
+      ]
+    }
+  }
 }
 
 resource "aws_iam_policy" "github_actions_deploy" {
@@ -167,7 +186,7 @@ resource "aws_iam_role_policy_attachment" "github_actions_deploy" {
 }
 
 resource "aws_iam_role_policy_attachment" "github_actions_power_user" {
-  count = var.enable_github_actions_oidc && var.github_actions_attach_power_user ? 1 : 0
+  count = var.enable_github_actions_oidc ? 1 : 0
 
   role       = aws_iam_role.github_actions[0].name
   policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"

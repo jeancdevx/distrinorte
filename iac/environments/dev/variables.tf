@@ -342,3 +342,10 @@ variable "github_actions_attach_power_user" {
   type        = bool
   default     = true
 }
+
+variable "terraform_state_bucket" {
+  description = "Bucket S3 del backend Terraform (permisos state en rol GitHub Actions)"
+  type        = string
+  default     = null
+  nullable    = true
+}

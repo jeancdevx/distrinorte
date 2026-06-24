@@ -78,3 +78,10 @@ variable "ecr_repository_arns" {
   default     = []
 }
 
+variable "terraform_state_bucket" {
+  description = "Bucket S3 del backend Terraform (permisos state en rol CI)"
+  type        = string
+  default     = null
+  nullable    = true
+}
+

@@ -82,6 +82,9 @@ github_oidc_branches             = ["develop", "production"]
 github_oidc_environments         = ["dev"]
 github_actions_attach_power_user = true
 
+# Solo local (mismo valor que backend.hcl / secret TF_STATE_BUCKET en GitHub)
+# terraform_state_bucket = "tu-bucket-tfstate"
+
 tags = {
   ManagedBy = "terraform"
   Project   = "distrinorte"

@@ -124,6 +124,7 @@ module "iam" {
   github_oidc_branches             = var.github_oidc_branches
   github_oidc_environments         = var.github_oidc_environments
   github_actions_attach_power_user = var.github_actions_attach_power_user
+  terraform_state_bucket           = var.terraform_state_bucket
 }
 
 module "ecs_cluster" {
