@@ -279,6 +279,12 @@ importers:
       '@aws-sdk/lib-dynamodb':
         specifier: 3.1075.0
         version: 3.1075.0(@aws-sdk/client-dynamodb@3.1075.0)
+      '@distrinorte/database':
+        specifier: workspace:*
+        version: link:../database
+      '@distrinorte/shared':
+        specifier: workspace:*
+        version: link:../shared
       ioredis:
         specifier: 5.10.0
         version: 5.10.0

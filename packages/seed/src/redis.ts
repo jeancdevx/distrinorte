@@ -1,16 +1,37 @@
 import { Redis } from 'ioredis'
 
-import { buildStockCacheKey, loadDemoProducts } from './lib/demo-data.js'
+import { createPrismaClient } from '@distrinorte/database'
+import {
+  buildStockCacheKey,
+  resolveStockCacheTtlSeconds
+} from '@distrinorte/shared'
 
-const STOCK_CACHE_TTL_SECONDS = 30
+function queueStockCacheQuantity(
+  pipeline: ReturnType<Redis['pipeline']>,
+  sku: string,
+  warehouseId: string,
+  quantity: number
+): void {
+  const key = buildStockCacheKey(sku, warehouseId)
+  const value = String(quantity)
+  const ttlSeconds = resolveStockCacheTtlSeconds()
 
-export async function warmRedisStock(): Promise<void> {
+  if (ttlSeconds) {
+    pipeline.set(key, value, 'EX', ttlSeconds)
+    return
+  }
+
+  pipeline.set(key, value)
+}
+
+export async function warmRedisStockFromRds(): Promise<void> {
   const host = process.env.REDIS_HOST
 
   if (!host) {
     throw new Error('REDIS_HOST is required')
   }
 
+  const prisma = createPrismaClient()
   const redis = new Redis({
     host,
     port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
@@ -22,23 +43,31 @@ export async function warmRedisStock(): Promise<void> {
   await redis.connect()
 
   try {
-    const { products } = loadDemoProducts()
-    const pipeline = redis.pipeline()
-    let keys = 0
+    const rows = await prisma.inventory.findMany({
+      select: { sku: true, warehouseId: true, quantity: true }
+    })
 
-    for (const product of products) {
-      for (const [warehouseId, quantity] of Object.entries(product.stock)) {
-        const key = buildStockCacheKey(product.sku, warehouseId)
-        pipeline.set(key, String(quantity), 'EX', STOCK_CACHE_TTL_SECONDS)
-        keys += 1
-      }
+    if (rows.length === 0) {
+      throw new Error('No inventory rows found in RDS — run db:seed first')
+    }
+
+    const pipeline = redis.pipeline()
+
+    for (const row of rows) {
+      queueStockCacheQuantity(pipeline, row.sku, row.warehouseId, row.quantity)
     }
 
     await pipeline.exec()
+
+    const ttlSeconds = resolveStockCacheTtlSeconds()
+    const ttlLabel =
+      ttlSeconds === undefined ? 'no expiry' : `TTL ${ttlSeconds}s`
+
     console.log(
-      `Redis: warmed ${keys} stock keys (TTL ${STOCK_CACHE_TTL_SECONDS}s)`
+      `Redis: warmed ${rows.length} stock keys from RDS (${ttlLabel})`
     )
   } finally {
+    await prisma.$disconnect()
     redis.disconnect()
   }
 }

@@ -4,12 +4,11 @@ import {
   NotFoundException
 } from '@nestjs/common'
 
+import { buildStockCacheKey } from '@distrinorte/shared'
+
 import { PrismaService } from '../database/prisma.service.js'
 import { RedisService } from '../redis/redis.service.js'
-import {
-  STOCK_CACHE_TTL_SECONDS,
-  buildStockCacheKey
-} from '../redis/stock-cache.js'
+import { writeStockCacheQuantity } from '../redis/stock-cache.js'
 
 export type StockRecord = {
   sku: string
@@ -56,11 +55,11 @@ export class InventoryService {
       throw new NotFoundException('Stock not found')
     }
 
-    await this.redis.client.set(
-      cacheKey,
-      inventory.quantity.toString(),
-      'EX',
-      STOCK_CACHE_TTL_SECONDS
+    await writeStockCacheQuantity(
+      this.redis.client,
+      inventory.sku,
+      inventory.warehouseId,
+      inventory.quantity
     )
 
     return {
@@ -75,12 +74,7 @@ export class InventoryService {
     warehouseId: string,
     quantity: number
   ): Promise<void> {
-    await this.redis.client.set(
-      buildStockCacheKey(sku, warehouseId),
-      quantity.toString(),
-      'EX',
-      STOCK_CACHE_TTL_SECONDS
-    )
+    await writeStockCacheQuantity(this.redis.client, sku, warehouseId, quantity)
   }
 
   async getStockFromDatabase(

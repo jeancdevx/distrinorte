@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
+
+import { buildStockCacheKey } from '@distrinorte/shared'
 
 import { ProductsRepository } from '../dynamodb/products.repository.js'
-import { InventoryStockClient } from '../inventory/inventory-stock.client.js'
 import { RedisService } from '../redis/redis.service.js'
-import { buildStockCacheKey } from '../redis/stock-cache.js'
 import { buildImageUrl } from './image-url.js'
 
 export type CatalogProduct = {
@@ -18,10 +18,11 @@ export type CatalogProduct = {
 
 @Injectable()
 export class CatalogService {
+  private readonly logger = new Logger(CatalogService.name)
+
   constructor(
     private readonly products: ProductsRepository,
-    private readonly redis: RedisService,
-    private readonly inventory: InventoryStockClient
+    private readonly redis: RedisService
   ) {}
 
   async listProducts(
@@ -63,33 +64,45 @@ export class CatalogService {
     )
     const stockValues = await this.redis.client.mget(...keys)
 
-    return Promise.all(
-      products.map(async (product, index) => {
-        let stock = parseStockQuantity(stockValues[index])
+    return products.map((product, index) => {
+      const cachedStock = stockValues[index]
+      const stock = resolveCatalogStock(
+        product.sku,
+        warehouseId,
+        cachedStock,
+        this.logger
+      )
 
-        if (stockValues[index] === null) {
-          stock = await this.inventory.getStock(product.sku, warehouseId)
-        }
-
-        return {
-          sku: product.sku,
-          name: product.name,
-          price: product.price,
-          category: product.category,
-          imageKey: product.imageKey,
-          imageUrl: buildImageUrl(product.imageKey),
-          stock
-        }
-      })
-    )
+      return {
+        sku: product.sku,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        imageKey: product.imageKey,
+        imageUrl: buildImageUrl(product.imageKey),
+        stock
+      }
+    })
   }
 }
 
-function parseStockQuantity(value: string | null): number {
-  if (value === null) {
+function resolveCatalogStock(
+  sku: string,
+  warehouseId: string,
+  cachedStock: string | null,
+  logger: Logger
+): number {
+  if (cachedStock === null) {
+    logger.error(
+      `Stock cache miss for catalog listing (sku=${sku}, warehouseId=${warehouseId})`
+    )
     return 0
   }
 
+  return parseStockQuantity(cachedStock)
+}
+
+function parseStockQuantity(value: string): number {
   const parsed = Number.parseInt(value, 10)
   return Number.isNaN(parsed) ? 0 : parsed
 }

@@ -1,5 +1,5 @@
 import { seedDynamoDbProducts } from './dynamodb.js'
-import { warmRedisStock } from './redis.js'
+import { warmRedisStockFromRds } from './redis.js'
 import { seedCatalogImages } from './s3.js'
 
 type SeedStep = 'all' | 'dynamodb' | 's3' | 'redis'
@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   }
 
   if (step === 'all' || step === 'redis') {
-    await warmRedisStock()
+    await warmRedisStockFromRds()
   }
 
   console.log(`AWS demo seed completed (step=${step})`)
