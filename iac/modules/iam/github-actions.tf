@@ -164,13 +164,48 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       ]
     }
   }
+
+  statement {
+    sid    = "TerraformIamProject"
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:GetOpenIDConnectProvider",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListPolicyVersions",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:UpdateRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicyVersion",
+      "iam:CreateOpenIDConnectProvider",
+      "iam:DeleteOpenIDConnectProvider",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:TagPolicy",
+      "iam:UntagRole",
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.name_prefix}-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${local.name_prefix}-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+    ]
+  }
 }
 
 resource "aws_iam_policy" "github_actions_deploy" {
   count = var.enable_github_actions_oidc ? 1 : 0
 
   name        = "${local.name_prefix}-github-actions-deploy"
-  description = "ECR push + ECS deploy/run-task para GitHub Actions"
+  description = "ECR push, ECS deploy y permisos IAM/state para terraform apply en CI"
   policy      = data.aws_iam_policy_document.github_actions_deploy[0].json
 
   tags = merge(var.tags, {
