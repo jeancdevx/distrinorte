@@ -33,9 +33,9 @@ variable "dlq_message_retention_seconds" {
 }
 
 variable "visibility_timeout_seconds" {
-  description = "Visibility timeout de las colas"
+  description = "Visibility timeout de las colas (>= tiempo maximo de procesamiento del consumer)"
   type        = number
-  default     = 30
+  default     = 60
 }
 
 variable "max_receive_count" {
