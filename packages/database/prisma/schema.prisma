@@ -38,17 +38,19 @@ enum AccountStatus {
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  customerId    String      @map("customer_id")
-  warehouseId   String      @map("warehouse_id")
-  status        OrderStatus @default(PENDING)
-  idempotencyKey String     @unique @map("idempotency_key")
-  correlationId String      @map("correlation_id")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  customer      Customer    @relation(fields: [customerId], references: [id])
-  lines         OrderLine[]
+  id              String      @id @default(uuid())
+  customerId      String      @map("customer_id")
+  warehouseId     String      @map("warehouse_id")
+  status          OrderStatus @default(PENDING)
+  rejectionReason String?     @map("rejection_reason")
+  idempotencyKey  String      @unique @map("idempotency_key")
+  correlationId   String      @map("correlation_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  lines           OrderLine[]
 
+  @@index([customerId, createdAt(sort: Desc)])
   @@map("orders")
 }
 
@@ -70,7 +72,7 @@ enum OrderStatus {
 
 model Inventory {
   sku         String
-  warehouseId String @map("warehouse_id")
+  warehouseId String   @map("warehouse_id")
   quantity    Int
   updatedAt   DateTime @updatedAt @map("updated_at")
 

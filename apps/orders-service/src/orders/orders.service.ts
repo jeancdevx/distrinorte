@@ -21,8 +21,10 @@ export type OrderRecord = {
   customerId: string
   warehouseId: string
   lines: Array<{ sku: string; quantity: number }>
+  rejectionReason: string | null
   correlationId: string
   createdAt: string
+  updatedAt: string
 }
 
 @Injectable()
@@ -35,7 +37,8 @@ export class OrdersService {
   async create(
     body: unknown,
     idempotencyKey: string,
-    correlationId: string
+    correlationId: string,
+    customerId: string
   ): Promise<OrderRecord> {
     const existing = await this.prisma.db.order.findUnique({
       where: { idempotencyKey },
@@ -43,6 +46,7 @@ export class OrdersService {
     })
 
     if (existing) {
+      this.assertOrderOwnership(existing.customerId, customerId)
       return this.toOrderRecord(existing)
     }
 
@@ -55,7 +59,7 @@ export class OrdersService {
     }
 
     const customer = await this.prisma.db.customer.findUnique({
-      where: { id: input.customerId }
+      where: { id: customerId }
     })
 
     if (!customer) {
@@ -64,7 +68,7 @@ export class OrdersService {
 
     const order = await this.prisma.db.order.create({
       data: {
-        customerId: input.customerId,
+        customerId,
         warehouseId: input.warehouseId,
         status: OrderStatus.PENDING,
         idempotencyKey,
@@ -99,13 +103,68 @@ export class OrdersService {
     return this.toOrderRecord(order)
   }
 
+  async getById(orderId: string, customerId: string): Promise<OrderRecord> {
+    const order = await this.prisma.db.order.findFirst({
+      where: {
+        id: orderId,
+        customerId
+      },
+      include: { lines: true }
+    })
+
+    if (!order) {
+      throw new NotFoundException('Order not found')
+    }
+
+    return this.toOrderRecord(order)
+  }
+
+  async listByCustomer(
+    customerId: string,
+    skip: number,
+    limit: number,
+    status?: OrderStatus
+  ): Promise<{ items: OrderRecord[]; total: number }> {
+    const where = {
+      customerId,
+      ...(status ? { status } : {})
+    }
+
+    const [orders, total] = await Promise.all([
+      this.prisma.db.order.findMany({
+        where,
+        include: { lines: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      this.prisma.db.order.count({ where })
+    ])
+
+    return {
+      items: orders.map(order => this.toOrderRecord(order)),
+      total
+    }
+  }
+
+  private assertOrderOwnership(
+    orderCustomerId: string,
+    authenticatedCustomerId: string
+  ): void {
+    if (orderCustomerId !== authenticatedCustomerId) {
+      throw new NotFoundException('Order not found')
+    }
+  }
+
   private toOrderRecord(order: {
     id: string
     status: OrderStatus
     customerId: string
     warehouseId: string
+    rejectionReason: string | null
     correlationId: string
     createdAt: Date
+    updatedAt: Date
     lines: Array<{ sku: string; quantity: number }>
   }): OrderRecord {
     return {
@@ -117,8 +176,10 @@ export class OrdersService {
         sku: line.sku,
         quantity: line.quantity
       })),
+      rejectionReason: order.rejectionReason,
       correlationId: order.correlationId,
-      createdAt: order.createdAt.toISOString()
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString()
     }
   }
 }

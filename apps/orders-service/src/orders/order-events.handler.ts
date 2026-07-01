@@ -27,7 +27,8 @@ export class OrderEventsHandler {
     }
 
     if (envelope['detail-type'] === EventDetailType.StockRejected) {
-      await this.rejectOrder(envelope.detail.orderId)
+      const detail = envelope.detail as StockRejectedEvent
+      await this.rejectOrder(detail.orderId, detail.reason)
       return
     }
 
@@ -50,14 +51,15 @@ export class OrderEventsHandler {
     }
   }
 
-  private async rejectOrder(orderId: string): Promise<void> {
+  private async rejectOrder(orderId: string, reason: string): Promise<void> {
     const result = await this.prisma.db.order.updateMany({
       where: {
         id: orderId,
         status: OrderStatus.PENDING
       },
       data: {
-        status: OrderStatus.REJECTED
+        status: OrderStatus.REJECTED,
+        rejectionReason: reason
       }
     })
 
