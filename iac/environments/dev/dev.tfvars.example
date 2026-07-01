@@ -85,6 +85,9 @@ github_actions_attach_power_user = true
 # Solo local (mismo valor que backend.hcl / secret TF_STATE_BUCKET en GitHub)
 # terraform_state_bucket = "tu-bucket-tfstate"
 
+# Observability: email para alarmas SNS — confirmar suscripcion en AWS
+# observability_alarm_email = "ops@tuempresa.com"
+
 tags = {
   ManagedBy = "terraform"
   Project   = "distrinorte"
