@@ -1,4 +1,17 @@
 import type { OrderLine } from './order-line.js'
+import type {
+  AvailabilityUpdatedEvent,
+  CatalogPriceUpdatedEvent,
+  CustomerRegisteredEvent,
+  CustomerUpdatedEvent
+} from './projection-events.js'
+
+export type {
+  AvailabilityUpdatedEvent,
+  CatalogPriceUpdatedEvent,
+  CustomerRegisteredEvent,
+  CustomerUpdatedEvent
+} from './projection-events.js'
 
 export type OrderCreatedEvent = {
   orderId: string
@@ -26,3 +39,7 @@ export type DomainEvent =
   | OrderCreatedEvent
   | StockReservedEvent
   | StockRejectedEvent
+  | CustomerRegisteredEvent
+  | CustomerUpdatedEvent
+  | CatalogPriceUpdatedEvent
+  | AvailabilityUpdatedEvent
