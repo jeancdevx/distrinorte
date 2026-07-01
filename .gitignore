@@ -57,6 +57,7 @@ pnpm-debug.log*
 
 # Test / coverage
 coverage/
+packages/integration-tests/src/setup/.integration-env.json
 
 # Docker
 .docker/

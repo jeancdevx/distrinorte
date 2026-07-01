@@ -12,6 +12,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
+    "test:integration": "vitest run --project '@distrinorte/integration-tests'",
+    "test:coverage": "vitest run --coverage --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
     "db:migrate:deploy": "pnpm --filter @distrinorte/database db:migrate:deploy",
     "db:migrate:dev": "pnpm --filter @distrinorte/database db:migrate:dev",
     "db:seed": "pnpm --filter @distrinorte/database db:seed",
@@ -32,6 +37,8 @@
     "oxlint": "1.70.0",
     "prettier": "3.8.4",
     "turbo": "2.9.18",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "4.1.9",
+    "@vitest/coverage-v8": "4.1.9"
   }
 }

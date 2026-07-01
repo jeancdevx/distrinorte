@@ -1,0 +1,24 @@
+{
+  "name": "@distrinorte/integration-tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@distrinorte/database": "workspace:*",
+    "@distrinorte/events": "workspace:*",
+    "@distrinorte/shared": "workspace:*",
+    "@nestjs/common": "11.1.27",
+    "@nestjs/core": "11.1.27"
+  },
+  "devDependencies": {
+    "@distrinorte/config": "workspace:*",
+    "@testcontainers/postgresql": "11.12.0",
+    "@types/node": "25.9.3",
+    "testcontainers": "11.12.0",
+    "typescript": "6.0.3"
+  }
+}
