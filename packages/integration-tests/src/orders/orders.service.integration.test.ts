@@ -4,10 +4,7 @@ import { OrderStatus } from '@distrinorte/database/orders'
 
 import { PrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
-import {
-  DirectCustomersClient,
-  FakeEventBridgePublisher
-} from '../setup/fakes.js'
+import { FakeEventBridgePublisher } from '../setup/fakes.js'
 import {
   disconnectTestPrisma,
   getTestPrismaClients,
@@ -17,11 +14,9 @@ import {
 describe('OrdersService (integration)', () => {
   const { customers, orders: prisma } = getTestPrismaClients()
   const eventBridge = new FakeEventBridgePublisher()
-  const customersClient = new DirectCustomersClient(customers)
   const service = new OrdersService(
     { db: prisma } as PrismaService,
-    eventBridge as never,
-    customersClient as never
+    eventBridge as never
   )
 
   let customerId: string
@@ -34,6 +29,7 @@ describe('OrdersService (integration)', () => {
       data: {
         name: 'Cliente Integración',
         taxId: '20999000111',
+        assignedWarehouseId: 'trujillo',
         accounts: {
           create: {
             email: 'integracion@orders.demo'
@@ -43,6 +39,15 @@ describe('OrdersService (integration)', () => {
     })
 
     customerId = customer.id
+
+    await prisma.customerSnapshot.create({
+      data: {
+        customerId: customer.id,
+        taxId: customer.taxId,
+        assignedWarehouseId: 'trujillo',
+        status: 'ACTIVE'
+      }
+    })
   })
 
   afterAll(async () => {
