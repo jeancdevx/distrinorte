@@ -47,6 +47,7 @@ locals {
   seed_runner_environment = {
     NODE_ENV                = var.environment
     AWS_REGION              = var.aws_region
+    EVENT_BUS_NAME          = module.messaging.event_bus_name
     DATABASE_HOST           = module.rds.endpoint
     DATABASE_PORT           = tostring(module.rds.port)
     DATABASE_ADMIN_NAME     = module.rds.db_name
@@ -57,6 +58,7 @@ locals {
     DATABASE_PASSWORD       = var.db_password
     LEGACY_DATABASE_NAME    = module.rds.db_name
     DYNAMODB_PRODUCTS_TABLE = module.dynamodb.products_table_name
+    DYNAMODB_CATALOG_AVAILABILITY_TABLE = module.dynamodb.catalog_availability_table_name
     REDIS_HOST              = module.elasticache.primary_endpoint
     REDIS_PORT              = tostring(module.elasticache.port)
     REDIS_AUTH_TOKEN        = var.redis_auth_token
