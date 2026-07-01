@@ -61,6 +61,12 @@ variable "enable_bot_control" {
   default     = false
 }
 
+variable "block_anonymous_ips" {
+  description = "Bloquea IPs anonimas/hosting (AWSManagedRulesAnonymousIpList). Desactivar en dev para CI (GitHub Actions)."
+  type        = bool
+  default     = true
+}
+
 variable "bot_control_inspection_level" {
   description = "Nivel de inspeccion Bot Control (COMMON o TARGETED)"
   type        = string

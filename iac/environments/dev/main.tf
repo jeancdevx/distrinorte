@@ -366,6 +366,7 @@ module "waf" {
   enable_geo_restriction = var.waf_enable_geo_restriction
   allowed_country_codes  = var.waf_allowed_country_codes
   enable_bot_control     = var.waf_enable_bot_control
+  block_anonymous_ips    = var.waf_block_anonymous_ips
 
   providers = {
     aws           = aws

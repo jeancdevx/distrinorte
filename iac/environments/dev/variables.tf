@@ -281,6 +281,12 @@ variable "waf_enable_bot_control" {
   default     = false
 }
 
+variable "waf_block_anonymous_ips" {
+  description = "Bloquea IPs anonimas/hosting en WAF. false en dev para permitir smoke HTTP desde GitHub Actions."
+  type        = bool
+  default     = true
+}
+
 variable "route53_domain_name" {
   description = "Dominio Route53 existente (ej. galaxymorph.com). Null omite DNS edge."
   type        = string

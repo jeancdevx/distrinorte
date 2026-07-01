@@ -225,8 +225,36 @@ jobs:
           CHANGED_catalog_service: ${{ needs.changes.outputs.catalog-service }}
         run: bash scripts/ci/deploy-ecs-services.sh
 
+      - name: Mint smoke access token
+        id: smoke-auth
+        working-directory: iac/environments/dev
+        env:
+          SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
+          SMOKE_ACCESS_TOKEN: ${{ secrets.SMOKE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SMOKE_DEMO_PASSWORD:-}" ]; then
+            terraform init -input=false \
+              -backend-config=backend.ci.hcl \
+              -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+            TOKEN="$(bash ../../../scripts/ci/mint-smoke-token.sh)"
+            echo "Minted fresh Cognito IdToken for smoke"
+          elif [ -n "${SMOKE_ACCESS_TOKEN:-}" ]; then
+            TOKEN="$(printf '%s' "${SMOKE_ACCESS_TOKEN}" | tr -d '\n\r')"
+            echo "Using SMOKE_ACCESS_TOKEN secret (trimmed)"
+          else
+            echo "No SMOKE_DEMO_PASSWORD or SMOKE_ACCESS_TOKEN; HTTP smoke will be skipped"
+            TOKEN=""
+          fi
+          {
+            echo "token<<EOF"
+            printf '%s' "${TOKEN}"
+            echo
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Smoke check
         env:
           SMOKE_BASE_URL: https://api.pedidos.galaxymorph.com
-          SMOKE_ACCESS_TOKEN: ${{ secrets.SMOKE_ACCESS_TOKEN }}
+          SMOKE_ACCESS_TOKEN: ${{ steps.smoke-auth.outputs.token }}
         run: bash scripts/ci/smoke-dev.sh

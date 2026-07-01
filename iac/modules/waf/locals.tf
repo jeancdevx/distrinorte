@@ -1,13 +1,17 @@
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
 
-  managed_rule_groups = [
+  base_managed_rule_groups = [
     "AWSManagedRulesAmazonIpReputationList",
-    "AWSManagedRulesAnonymousIpList",
     "AWSManagedRulesKnownBadInputsRuleSet",
     "AWSManagedRulesCommonRuleSet",
     "AWSManagedRulesSQLiRuleSet",
   ]
+
+  managed_rule_groups = var.block_anonymous_ips ? concat(
+    local.base_managed_rule_groups,
+    ["AWSManagedRulesAnonymousIpList"]
+  ) : local.base_managed_rule_groups
 
   api_managed_rule_priorities = {
     AWSManagedRulesAmazonIpReputationList = 10
