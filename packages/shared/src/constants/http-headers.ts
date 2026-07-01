@@ -1,4 +1,5 @@
 export const HttpHeaders = {
+  Authorization: 'authorization',
   CorrelationId: 'x-correlation-id',
   IdempotencyKey: 'idempotency-key'
 } as const
