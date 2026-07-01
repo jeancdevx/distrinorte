@@ -15,6 +15,20 @@ data "aws_iam_policy_document" "catalog_dynamodb" {
       "${var.products_table_arn}/index/*",
     ]
   }
+
+  statement {
+    sid    = "ReadWriteCatalogAvailability"
+    effect = "Allow"
+
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:BatchGetItem",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+    ]
+
+    resources = [var.catalog_availability_table_arn]
+  }
 }
 
 resource "aws_iam_policy" "catalog_dynamodb" {

@@ -53,9 +53,18 @@ importers:
       '@aws-sdk/client-dynamodb':
         specifier: 3.1075.0
         version: 3.1075.0
+      '@aws-sdk/client-eventbridge':
+        specifier: 3.1075.0
+        version: 3.1075.0
+      '@aws-sdk/client-sqs':
+        specifier: 3.1075.0
+        version: 3.1075.0
       '@aws-sdk/lib-dynamodb':
         specifier: 3.1075.0
         version: 3.1075.0(@aws-sdk/client-dynamodb@3.1075.0)
+      '@distrinorte/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@distrinorte/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -68,9 +77,6 @@ importers:
       '@nestjs/platform-express':
         specifier: 11.1.27
         version: 11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27)
-      ioredis:
-        specifier: 5.11.1
-        version: 5.11.1
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -93,9 +99,15 @@ importers:
 
   apps/customers-service:
     dependencies:
+      '@aws-sdk/client-eventbridge':
+        specifier: 3.1075.0
+        version: 3.1075.0
       '@distrinorte/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@distrinorte/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@distrinorte/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -313,6 +325,9 @@ importers:
       '@aws-sdk/client-dynamodb':
         specifier: 3.1075.0
         version: 3.1075.0
+      '@aws-sdk/client-eventbridge':
+        specifier: 3.1075.0
+        version: 3.1075.0
       '@aws-sdk/client-s3':
         specifier: 3.1075.0
         version: 3.1075.0
@@ -322,6 +337,9 @@ importers:
       '@distrinorte/database':
         specifier: workspace:*
         version: link:../database
+      '@distrinorte/events':
+        specifier: workspace:*
+        version: link:../events
       '@distrinorte/shared':
         specifier: workspace:*
         version: link:../shared

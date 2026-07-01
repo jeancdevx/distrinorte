@@ -8,9 +8,17 @@ export type {
   DomainEvent,
   OrderCreatedEvent,
   StockRejectedEvent,
-  StockReservedEvent
+  StockReservedEvent,
+  AvailabilityUpdatedEvent,
+  CatalogPriceUpdatedEvent,
+  CustomerRegisteredEvent,
+  CustomerUpdatedEvent
 } from './types/domain-events.js'
 export {
+  buildAvailabilityUpdatedEntry,
+  buildCatalogPriceUpdatedEntry,
+  buildCustomerRegisteredEntry,
+  buildCustomerUpdatedEntry,
   buildOrderCreatedEntry,
   buildStockRejectedEntry,
   buildStockReservedEntry,

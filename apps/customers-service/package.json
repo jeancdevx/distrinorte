@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-eventbridge": "3.1075.0",
     "@distrinorte/database": "workspace:*",
+    "@distrinorte/events": "workspace:*",
     "@distrinorte/shared": "workspace:*",
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",

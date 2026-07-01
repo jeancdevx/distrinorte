@@ -8,6 +8,12 @@ import type {
   StockRejectedEvent,
   StockReservedEvent
 } from '@/types/domain-events.js'
+import type {
+  AvailabilityUpdatedEvent,
+  CatalogPriceUpdatedEvent,
+  CustomerRegisteredEvent,
+  CustomerUpdatedEvent
+} from '@/types/projection-events.js'
 
 export type EventBridgeEntry = {
   Source: typeof EVENT_SOURCE
@@ -56,6 +62,54 @@ export function buildStockRejectedEntry(
   return {
     Source: EVENT_SOURCE,
     DetailType: EventDetailType.StockRejected,
+    Detail: serializeEventDetail(detail),
+    ...(eventBusName ? { EventBusName: eventBusName } : {})
+  }
+}
+
+export function buildCustomerRegisteredEntry(
+  detail: CustomerRegisteredEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return {
+    Source: EVENT_SOURCE,
+    DetailType: EventDetailType.CustomerRegistered,
+    Detail: serializeEventDetail(detail),
+    ...(eventBusName ? { EventBusName: eventBusName } : {})
+  }
+}
+
+export function buildCustomerUpdatedEntry(
+  detail: CustomerUpdatedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return {
+    Source: EVENT_SOURCE,
+    DetailType: EventDetailType.CustomerUpdated,
+    Detail: serializeEventDetail(detail),
+    ...(eventBusName ? { EventBusName: eventBusName } : {})
+  }
+}
+
+export function buildCatalogPriceUpdatedEntry(
+  detail: CatalogPriceUpdatedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return {
+    Source: EVENT_SOURCE,
+    DetailType: EventDetailType.CatalogPriceUpdated,
+    Detail: serializeEventDetail(detail),
+    ...(eventBusName ? { EventBusName: eventBusName } : {})
+  }
+}
+
+export function buildAvailabilityUpdatedEntry(
+  detail: AvailabilityUpdatedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return {
+    Source: EVENT_SOURCE,
+    DetailType: EventDetailType.AvailabilityUpdated,
     Detail: serializeEventDetail(detail),
     ...(eventBusName ? { EventBusName: eventBusName } : {})
   }

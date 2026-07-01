@@ -29,4 +29,4 @@ COPY --from=deps --chown=seed:nodejs /app/ .
 
 USER seed
 
-CMD ["sh", "-c", "pnpm db:ensure-databases && pnpm db:migrate:legacy-split && pnpm db:migrate:deploy && pnpm db:seed && pnpm seed:aws"]
+CMD ["sh", "-c", "pnpm --filter @distrinorte/database db:ensure-databases && pnpm --filter @distrinorte/database db:migrate:legacy-split && pnpm --filter @distrinorte/database db:migrate:deploy && pnpm --filter @distrinorte/database db:seed && pnpm --filter @distrinorte/seed seed:aws"]

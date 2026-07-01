@@ -6,6 +6,8 @@ import {
   resolveStockCacheTtlSeconds
 } from '@distrinorte/shared'
 
+import { seedCatalogAvailabilityFromInventory } from './dynamodb.js'
+
 function queueStockCacheQuantity(
   pipeline: ReturnType<Redis['pipeline']>,
   sku: string,
@@ -58,6 +60,7 @@ export async function warmRedisStockFromRds(): Promise<void> {
     }
 
     await pipeline.exec()
+    await seedCatalogAvailabilityFromInventory(rows)
 
     const ttlSeconds = resolveStockCacheTtlSeconds()
     const ttlLabel =

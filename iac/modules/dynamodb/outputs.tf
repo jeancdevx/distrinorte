@@ -12,3 +12,13 @@ output "products_category_gsi_name" {
   description = "Nombre del GSI por categoria"
   value       = local.gsi_category
 }
+
+output "catalog_availability_table_name" {
+  description = "Nombre de la tabla DynamoDB catalog_availability"
+  value       = aws_dynamodb_table.catalog_availability.name
+}
+
+output "catalog_availability_table_arn" {
+  description = "ARN de la tabla DynamoDB catalog_availability"
+  value       = aws_dynamodb_table.catalog_availability.arn
+}

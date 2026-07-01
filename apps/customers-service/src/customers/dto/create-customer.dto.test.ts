@@ -13,7 +13,8 @@ describe('parseCreateCustomerInput', () => {
     ).toEqual({
       name: 'El Norte',
       taxId: '20123456789',
-      email: 'demo@elnorte.demo'
+      email: 'demo@elnorte.demo',
+      assignedWarehouseId: 'trujillo'
     })
   })
 

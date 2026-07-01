@@ -38,3 +38,25 @@ enum OrderStatus {
   CONFIRMED
   REJECTED
 }
+
+model CustomerSnapshot {
+  customerId          String   @id @map("customer_id")
+  taxId               String   @map("tax_id")
+  assignedWarehouseId String   @map("assigned_warehouse_id")
+  status              String
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("customer_snapshots")
+}
+
+model PriceSnapshot {
+  sku              String   @id
+  unitPriceNet     Decimal  @map("unit_price_net") @db.Decimal(12, 2)
+  saleUnit         String   @default("UN") @map("sale_unit")
+  unitsPerBaseUnit Int      @default(1) @map("units_per_base_unit")
+  taxAffectation   String   @default("GRAVADO") @map("tax_affectation")
+  version          Int      @default(1)
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("price_snapshots")
+}

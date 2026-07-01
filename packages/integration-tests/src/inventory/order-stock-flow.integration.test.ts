@@ -9,7 +9,6 @@ import { RedisService } from '../../../../apps/inventory-service/src/redis/redis
 import { PrismaService as OrdersPrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
 import {
-  DirectCustomersClient,
   FakeEventBridgePublisher,
   createInMemoryRedis
 } from '../setup/fakes.js'
@@ -28,12 +27,10 @@ describe('Order stock flow (integration)', () => {
   const ordersEventBridge = new FakeEventBridgePublisher()
   const inventoryEventBridge = new FakeEventBridgePublisher()
   const redis = createInMemoryRedis()
-  const customersClient = new DirectCustomersClient(customers)
 
   const ordersService = new OrdersService(
     { db: orders } as OrdersPrismaService,
-    ordersEventBridge as never,
-    customersClient as never
+    ordersEventBridge as never
   )
   const inventoryService = new InventoryService(
     { db: inventoryPrisma } as PrismaService,
@@ -53,11 +50,13 @@ describe('Order stock flow (integration)', () => {
     ordersEventBridge.orderCreated.length = 0
     inventoryEventBridge.stockReserved.length = 0
     inventoryEventBridge.stockRejected.length = 0
+    inventoryEventBridge.availabilityUpdated.length = 0
 
     const customer = await customers.customer.create({
       data: {
         name: 'Cliente Flujo',
         taxId: '20888777666',
+        assignedWarehouseId: 'trujillo',
         accounts: {
           create: {
             email: 'flujo@integration.demo'
@@ -67,6 +66,15 @@ describe('Order stock flow (integration)', () => {
     })
 
     customerId = customer.id
+
+    await orders.customerSnapshot.create({
+      data: {
+        customerId: customer.id,
+        taxId: customer.taxId,
+        assignedWarehouseId: 'trujillo',
+        status: 'ACTIVE'
+      }
+    })
 
     await inventoryPrisma.inventory.create({
       data: {
@@ -117,6 +125,7 @@ describe('Order stock flow (integration)', () => {
     })
     expect(inventoryEventBridge.stockReserved).toHaveLength(1)
     expect(inventoryEventBridge.stockRejected).toHaveLength(0)
+    expect(inventoryEventBridge.availabilityUpdated).toHaveLength(1)
   })
 
   it('rejects the order when stock is insufficient', async () => {

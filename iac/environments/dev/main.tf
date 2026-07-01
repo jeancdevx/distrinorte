@@ -112,11 +112,13 @@ module "iam" {
   environment  = local.environment
   tags         = local.common_tags
 
-  event_bus_arn             = module.messaging.event_bus_arn
-  inventory_work_queue_arn  = module.messaging.inventory_work_queue_arn
-  orders_events_queue_arn   = module.messaging.orders_events_queue_arn
-  products_table_arn        = module.dynamodb.products_table_arn
-  catalog_images_bucket_arn = module.s3.catalog_images_bucket_arn
+  event_bus_arn                  = module.messaging.event_bus_arn
+  inventory_work_queue_arn       = module.messaging.inventory_work_queue_arn
+  orders_events_queue_arn        = module.messaging.orders_events_queue_arn
+  projections_work_queue_arn     = module.messaging.projections_work_queue_arn
+  products_table_arn             = module.dynamodb.products_table_arn
+  catalog_availability_table_arn = module.dynamodb.catalog_availability_table_arn
+  catalog_images_bucket_arn      = module.s3.catalog_images_bucket_arn
 
   ecr_repository_arns              = values(module.ecr.repository_arns)
   enable_github_actions_oidc       = var.enable_github_actions_oidc
@@ -171,11 +173,13 @@ module "customers_service" {
   environment_variables = {
     PORT              = "3004"
     NODE_ENV          = var.environment
+    AWS_REGION        = var.aws_region
     DATABASE_HOST     = module.rds.endpoint
     DATABASE_PORT     = tostring(module.rds.port)
     DATABASE_NAME     = module.rds.service_database_names.customers
     DATABASE_USER     = module.rds.username
     DATABASE_PASSWORD = var.db_password
+    EVENT_BUS_NAME    = module.messaging.event_bus_name
   }
 
   autoscaling_max_capacity = 2
@@ -248,17 +252,17 @@ module "orders_service" {
   container_image = local.ecr_image["orders-service"]
 
   environment_variables = {
-    PORT                    = "3001"
-    NODE_ENV                = var.environment
-    AWS_REGION              = var.aws_region
-    DATABASE_HOST           = module.rds.endpoint
-    DATABASE_PORT           = tostring(module.rds.port)
-    DATABASE_NAME           = module.rds.service_database_names.orders
-    DATABASE_USER           = module.rds.username
-    DATABASE_PASSWORD       = var.db_password
-    CUSTOMERS_SERVICE_URL   = "http://${module.alb.alb_dns_name}/customers"
-    EVENT_BUS_NAME          = module.messaging.event_bus_name
-    ORDERS_EVENTS_QUEUE_URL = module.messaging.orders_events_queue_url
+    PORT                       = "3001"
+    NODE_ENV                   = var.environment
+    AWS_REGION                 = var.aws_region
+    DATABASE_HOST              = module.rds.endpoint
+    DATABASE_PORT              = tostring(module.rds.port)
+    DATABASE_NAME              = module.rds.service_database_names.orders
+    DATABASE_USER              = module.rds.username
+    DATABASE_PASSWORD          = var.db_password
+    EVENT_BUS_NAME             = module.messaging.event_bus_name
+    ORDERS_EVENTS_QUEUE_URL    = module.messaging.orders_events_queue_url
+    PROJECTIONS_WORK_QUEUE_URL = module.messaging.projections_work_queue_url
   }
 
   sqs_queue_name           = module.messaging.orders_events_queue_name
@@ -288,17 +292,22 @@ module "catalog_service" {
   container_image = local.ecr_image["catalog-service"]
 
   environment_variables = {
-    PORT                    = "3003"
-    NODE_ENV                = var.environment
-    AWS_REGION              = var.aws_region
-    DYNAMODB_PRODUCTS_TABLE = module.dynamodb.products_table_name
-    DYNAMODB_CATEGORY_GSI   = module.dynamodb.products_category_gsi_name
-    REDIS_HOST              = module.elasticache.primary_endpoint
-    REDIS_PORT              = tostring(module.elasticache.port)
-    REDIS_AUTH_TOKEN        = var.redis_auth_token
-    REDIS_TLS               = tostring(var.redis_transit_encryption_enabled)
-    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
+    PORT                                = "3003"
+    NODE_ENV                            = var.environment
+    AWS_REGION                          = var.aws_region
+    DYNAMODB_PRODUCTS_TABLE             = module.dynamodb.products_table_name
+    DYNAMODB_CATEGORY_GSI               = module.dynamodb.products_category_gsi_name
+    DYNAMODB_CATALOG_AVAILABILITY_TABLE = module.dynamodb.catalog_availability_table_name
+    EVENT_BUS_NAME                      = module.messaging.event_bus_name
+    PROJECTIONS_WORK_QUEUE_URL          = module.messaging.projections_work_queue_url
+    REDIS_HOST                          = module.elasticache.primary_endpoint
+    REDIS_PORT                          = tostring(module.elasticache.port)
+    REDIS_AUTH_TOKEN                    = var.redis_auth_token
+    REDIS_TLS                           = tostring(var.redis_transit_encryption_enabled)
+    CATALOG_ASSETS_BASE_URL             = local.catalog_assets_base_url
   }
+
+  sqs_queue_name = module.messaging.projections_work_queue_name
 
   autoscaling_max_capacity = 2
 }
@@ -468,13 +477,15 @@ module "observability" {
   }
 
   sqs_queue_names = {
-    inventory-work = module.messaging.inventory_work_queue_name
-    orders-events  = module.messaging.orders_events_queue_name
+    inventory-work   = module.messaging.inventory_work_queue_name
+    orders-events    = module.messaging.orders_events_queue_name
+    projections-work = module.messaging.projections_work_queue_name
   }
 
   sqs_dlq_names = {
-    inventory-work = module.messaging.inventory_work_dlq_name
-    orders-events  = module.messaging.orders_events_dlq_name
+    inventory-work   = module.messaging.inventory_work_dlq_name
+    orders-events    = module.messaging.orders_events_dlq_name
+    projections-work = module.messaging.projections_work_dlq_name
   }
 
   alarm_email = var.observability_alarm_email

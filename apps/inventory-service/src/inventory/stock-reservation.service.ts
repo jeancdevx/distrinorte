@@ -86,6 +86,14 @@ export class StockReservationService {
           event.warehouseId,
           inventory.quantity
         )
+
+        await this.eventBridge.publishAvailabilityUpdated({
+          warehouseId: event.warehouseId,
+          sku: line.sku,
+          availableQty: inventory.quantity,
+          asOf: new Date().toISOString(),
+          correlationId: event.correlationId
+        })
       }
     })
 

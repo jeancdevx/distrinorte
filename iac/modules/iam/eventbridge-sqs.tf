@@ -21,6 +21,20 @@ data "aws_iam_policy_document" "orders_messaging" {
 
     resources = [var.orders_events_queue_arn]
   }
+
+  statement {
+    sid    = "ConsumeProjectionsWorkQueue"
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility",
+    ]
+
+    resources = [var.projections_work_queue_arn]
+  }
 }
 
 resource "aws_iam_policy" "orders_messaging" {

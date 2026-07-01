@@ -54,7 +54,7 @@ export async function resetDatabase(
   prismaClients: TestPrismaClients = getTestPrismaClients()
 ): Promise<void> {
   await prismaClients.orders.$executeRawUnsafe(`
-    TRUNCATE TABLE order_lines, orders RESTART IDENTITY CASCADE
+    TRUNCATE TABLE order_lines, orders, customer_snapshots, price_snapshots RESTART IDENTITY CASCADE
   `)
   await prismaClients.customers.$executeRawUnsafe(`
     TRUNCATE TABLE accounts, customers RESTART IDENTITY CASCADE

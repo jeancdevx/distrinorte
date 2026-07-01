@@ -11,6 +11,7 @@ import {
 } from './dto/create-customer.dto.js'
 
 import { PrismaService } from '../database/prisma.service.js'
+import { EventBridgePublisher } from '../messaging/eventbridge.publisher.js'
 
 export type CustomerRecord = {
   id: string
@@ -18,6 +19,7 @@ export type CustomerRecord = {
   taxId: string
   email: string
   accountId: string
+  assignedWarehouseId: string
   createdAt: string
 }
 
@@ -25,14 +27,21 @@ export type CustomerListItem = {
   id: string
   name: string
   taxId: string
+  assignedWarehouseId: string | null
   createdAt: string
 }
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBridge: EventBridgePublisher
+  ) {}
 
-  async create(body: unknown): Promise<CustomerRecord> {
+  async create(
+    body: unknown,
+    correlationId = 'unknown'
+  ): Promise<CustomerRecord> {
     let input: CreateCustomerInput
 
     try {
@@ -46,6 +55,7 @@ export class CustomersService {
         data: {
           name: input.name,
           taxId: input.taxId,
+          assignedWarehouseId: input.assignedWarehouseId,
           accounts: {
             create: {
               email: input.email
@@ -65,12 +75,23 @@ export class CustomersService {
         throw new Error('Account was not created')
       }
 
+      await this.eventBridge.publishCustomerRegistered({
+        customerId: customer.id,
+        taxId: customer.taxId,
+        assignedWarehouseId:
+          customer.assignedWarehouseId ?? input.assignedWarehouseId,
+        status: account.status,
+        correlationId
+      })
+
       return {
         id: customer.id,
         name: customer.name,
         taxId: customer.taxId,
         email: account.email,
         accountId: account.id,
+        assignedWarehouseId:
+          customer.assignedWarehouseId ?? input.assignedWarehouseId,
         createdAt: customer.createdAt.toISOString()
       }
     } catch (error) {
@@ -91,6 +112,7 @@ export class CustomersService {
         id: true,
         name: true,
         taxId: true,
+        assignedWarehouseId: true,
         createdAt: true
       }
     })
@@ -121,6 +143,7 @@ export class CustomersService {
           id: true,
           name: true,
           taxId: true,
+          assignedWarehouseId: true,
           createdAt: true
         }
       }),

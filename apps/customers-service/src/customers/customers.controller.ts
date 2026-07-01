@@ -29,7 +29,7 @@ export class CustomersController {
     @Body() body: unknown,
     @Headers(HttpHeaders.CorrelationId) correlationId?: string
   ) {
-    const customer = await this.customersService.create(body)
+    const customer = await this.customersService.create(body, correlationId)
 
     return ok(customer, correlationId)
   }

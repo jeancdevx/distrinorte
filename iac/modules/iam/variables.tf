@@ -29,8 +29,18 @@ variable "orders_events_queue_arn" {
   type        = string
 }
 
+variable "projections_work_queue_arn" {
+  description = "ARN cola SQS projections-work"
+  type        = string
+}
+
 variable "products_table_arn" {
   description = "ARN tabla DynamoDB products"
+  type        = string
+}
+
+variable "catalog_availability_table_arn" {
+  description = "ARN tabla DynamoDB catalog_availability"
   type        = string
 }
 

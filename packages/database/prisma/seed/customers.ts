@@ -6,11 +6,13 @@ import {
   AccountStatus,
   createCustomersPrismaClient
 } from '../../src/customers.js'
+import { createOrdersPrismaClient } from '../../src/orders.js'
 
 type DemoCustomer = {
   id: string
   name: string
   taxId: string
+  assignedWarehouseId?: string
   account: {
     email: string
     status: 'ACTIVE' | 'SUSPENDED'
@@ -31,16 +33,20 @@ function readJson<T>(relativePath: string): T {
 
 export async function seedCustomers(): Promise<void> {
   const prisma = createCustomersPrismaClient()
+  const ordersPrisma = createOrdersPrismaClient()
   const { customers } = readJson<DemoCustomersFile>('data/demo/customers.json')
 
   try {
     for (const customer of customers) {
-      await prisma.customer.upsert({
+      const assignedWarehouseId = customer.assignedWarehouseId ?? 'trujillo'
+
+      const upserted = await prisma.customer.upsert({
         where: { taxId: customer.taxId },
         create: {
           id: customer.id,
           name: customer.name,
           taxId: customer.taxId,
+          assignedWarehouseId,
           accounts: {
             create: {
               email: customer.account.email,
@@ -49,7 +55,14 @@ export async function seedCustomers(): Promise<void> {
           }
         },
         update: {
-          name: customer.name
+          name: customer.name,
+          assignedWarehouseId
+        },
+        include: {
+          accounts: {
+            take: 1,
+            orderBy: { createdAt: 'asc' }
+          }
         }
       })
 
@@ -65,9 +78,27 @@ export async function seedCustomers(): Promise<void> {
         }
       })
 
+      const account = upserted.accounts[0]
+
+      await ordersPrisma.customerSnapshot.upsert({
+        where: { customerId: upserted.id },
+        create: {
+          customerId: upserted.id,
+          taxId: upserted.taxId,
+          assignedWarehouseId,
+          status: account?.status ?? 'ACTIVE'
+        },
+        update: {
+          taxId: upserted.taxId,
+          assignedWarehouseId,
+          status: account?.status ?? 'ACTIVE'
+        }
+      })
+
       console.log(`customer upserted: ${customer.taxId} (${customer.id})`)
     }
   } finally {
     await prisma.$disconnect()
+    await ordersPrisma.$disconnect()
   }
 }

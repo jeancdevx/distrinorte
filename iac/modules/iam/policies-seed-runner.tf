@@ -47,6 +47,32 @@ data "aws_iam_policy_document" "seed_runner" {
       ]
     }
   }
+
+  statement {
+    sid    = "PublishProjectionEvents"
+    effect = "Allow"
+
+    actions = ["events:PutEvents"]
+
+    resources = [var.event_bus_arn]
+  }
+
+  dynamic "statement" {
+    for_each = var.catalog_availability_table_arn != null ? [1] : []
+
+    content {
+      sid    = "WriteCatalogAvailability"
+      effect = "Allow"
+
+      actions = [
+        "dynamodb:PutItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:UpdateItem",
+      ]
+
+      resources = [var.catalog_availability_table_arn]
+    }
+  }
 }
 
 resource "aws_iam_policy" "seed_runner" {

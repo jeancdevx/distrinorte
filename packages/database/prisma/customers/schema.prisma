@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Customer {
-  id        String    @id @default(uuid())
-  name      String
-  taxId     String    @unique @map("tax_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  accounts  Account[]
+  id                  String    @id @default(uuid())
+  name                String
+  taxId               String    @unique @map("tax_id")
+  assignedWarehouseId String?   @map("assigned_warehouse_id")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  accounts            Account[]
 
   @@map("customers")
 }

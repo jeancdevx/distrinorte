@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createInventoryPrismaClient } from '../../src/inventory.js'
+import { createOrdersPrismaClient } from '../../src/orders.js'
 
 type WarehouseSeed = {
   id: string
@@ -42,6 +43,7 @@ function readJson<T>(relativePath: string): T {
 
 export async function seedInventoryDomain(): Promise<void> {
   const prisma = createInventoryPrismaClient()
+  const ordersPrisma = createOrdersPrismaClient()
   const { warehouses, transferMatrix } = readJson<WarehousesFile>(
     'data/demo/warehouses.json'
   )
@@ -112,7 +114,28 @@ export async function seedInventoryDomain(): Promise<void> {
     }
 
     console.log(`inventory upserted for ${products.length} products`)
+
+    for (const product of products) {
+      await ordersPrisma.priceSnapshot.upsert({
+        where: { sku: product.sku },
+        create: {
+          sku: product.sku,
+          unitPriceNet: product.price,
+          saleUnit: 'UN',
+          unitsPerBaseUnit: 1,
+          taxAffectation: 'GRAVADO',
+          version: 1
+        },
+        update: {
+          unitPriceNet: product.price,
+          version: 1
+        }
+      })
+    }
+
+    console.log(`price_snapshots upserted for ${products.length} products`)
   } finally {
     await prisma.$disconnect()
+    await ordersPrisma.$disconnect()
   }
 }

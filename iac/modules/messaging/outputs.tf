@@ -57,3 +57,28 @@ output "orders_events_dlq_name" {
   description = "Nombre de la DLQ orders-events"
   value       = aws_sqs_queue.orders_events_dlq.name
 }
+
+output "projections_work_queue_url" {
+  description = "URL de la cola projections-work"
+  value       = aws_sqs_queue.projections_work.url
+}
+
+output "projections_work_queue_arn" {
+  description = "ARN de la cola projections-work"
+  value       = aws_sqs_queue.projections_work.arn
+}
+
+output "projections_work_queue_name" {
+  description = "Nombre de la cola projections-work"
+  value       = aws_sqs_queue.projections_work.name
+}
+
+output "projections_work_dlq_url" {
+  description = "URL de la DLQ projections-work"
+  value       = aws_sqs_queue.projections_work_dlq.url
+}
+
+output "projections_work_dlq_name" {
+  description = "Nombre de la DLQ projections-work"
+  value       = aws_sqs_queue.projections_work_dlq.name
+}

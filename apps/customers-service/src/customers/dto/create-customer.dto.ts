@@ -2,6 +2,7 @@ export type CreateCustomerInput = {
   name: string
   taxId: string
   email: string
+  assignedWarehouseId: string
 }
 
 export function parseCreateCustomerInput(body: unknown): CreateCustomerInput {
@@ -13,12 +14,27 @@ export function parseCreateCustomerInput(body: unknown): CreateCustomerInput {
   const name = readNonEmptyString(record.name, 'name')
   const taxId = readNonEmptyString(record.taxId, 'taxId')
   const email = readNonEmptyString(record.email, 'email')
+  const assignedWarehouseId = readOptionalWarehouseId(
+    record.assignedWarehouseId
+  )
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error('INVALID_EMAIL')
   }
 
-  return { name, taxId, email }
+  return { name, taxId, email, assignedWarehouseId }
+}
+
+function readOptionalWarehouseId(value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return 'trujillo'
+  }
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error('INVALID_ASSIGNEDWAREHOUSEID')
+  }
+
+  return value.trim()
 }
 
 function readNonEmptyString(value: unknown, field: string): string {
