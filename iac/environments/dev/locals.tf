@@ -49,9 +49,13 @@ locals {
     AWS_REGION              = var.aws_region
     DATABASE_HOST           = module.rds.endpoint
     DATABASE_PORT           = tostring(module.rds.port)
-    DATABASE_NAME           = module.rds.db_name
+    DATABASE_ADMIN_NAME     = module.rds.db_name
+    DATABASE_NAME_CUSTOMERS = module.rds.service_database_names.customers
+    DATABASE_NAME_ORDERS    = module.rds.service_database_names.orders
+    DATABASE_NAME_INVENTORY = module.rds.service_database_names.inventory
     DATABASE_USER           = module.rds.username
     DATABASE_PASSWORD       = var.db_password
+    LEGACY_DATABASE_NAME    = module.rds.db_name
     DYNAMODB_PRODUCTS_TABLE = module.dynamodb.products_table_name
     REDIS_HOST              = module.elasticache.primary_endpoint
     REDIS_PORT              = tostring(module.elasticache.port)
