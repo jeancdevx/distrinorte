@@ -12,7 +12,6 @@ import {
   type CreateOrderInput
 } from './dto/create-order.dto.js'
 
-import { CustomersClient } from '../clients/customers.client.js'
 import { PrismaService } from '../database/prisma.service.js'
 import { EventBridgePublisher } from '../messaging/eventbridge.publisher.js'
 
@@ -32,8 +31,7 @@ export type OrderRecord = {
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBridge: EventBridgePublisher,
-    private readonly customersClient: CustomersClient
+    private readonly eventBridge: EventBridgePublisher
   ) {}
 
   async create(
@@ -60,7 +58,7 @@ export class OrdersService {
       throw new BadRequestException('Invalid order payload')
     }
 
-    await this.customersClient.getById(customerId)
+    await this.assertCustomerSnapshotReady(customerId)
 
     const order = await this.prisma.db.order.create({
       data: {
@@ -140,6 +138,16 @@ export class OrdersService {
     return {
       items: orders.map(order => this.toOrderRecord(order)),
       total
+    }
+  }
+
+  private async assertCustomerSnapshotReady(customerId: string): Promise<void> {
+    const snapshot = await this.prisma.db.customerSnapshot.findUnique({
+      where: { customerId }
+    })
+
+    if (!snapshot) {
+      throw new ServiceUnavailableException('CUSTOMER_SYNC_PENDING')
     }
   }
 

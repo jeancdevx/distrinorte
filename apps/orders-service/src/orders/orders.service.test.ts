@@ -33,25 +33,21 @@ describe('OrdersService', () => {
         findMany: vi.fn(),
         count: vi.fn(),
         create: vi.fn()
+      },
+      customerSnapshot: {
+        findUnique: vi.fn()
       }
     }
   }
   const eventBridge = {
     publishOrderCreated: vi.fn()
   }
-  const customersClient = {
-    getById: vi.fn()
-  }
 
   let service: OrdersService
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new OrdersService(
-      prisma as never,
-      eventBridge as never,
-      customersClient as never
-    )
+    service = new OrdersService(prisma as never, eventBridge as never)
   })
 
   describe('create', () => {
@@ -69,7 +65,7 @@ describe('OrdersService', () => {
       expect(result.orderId).toBe('ord-1')
       expect(prisma.db.order.create).not.toHaveBeenCalled()
       expect(eventBridge.publishOrderCreated).not.toHaveBeenCalled()
-      expect(customersClient.getById).not.toHaveBeenCalled()
+      expect(prisma.db.customerSnapshot.findUnique).not.toHaveBeenCalled()
     })
 
     it('hides another customer order behind not found', async () => {
@@ -90,11 +86,9 @@ describe('OrdersService', () => {
       ).rejects.toBeInstanceOf(BadRequestException)
     })
 
-    it('requires an existing customer', async () => {
+    it('requires a synced customer snapshot', async () => {
       prisma.db.order.findUnique.mockResolvedValue(null)
-      customersClient.getById.mockRejectedValue(
-        new NotFoundException('Customer not found')
-      )
+      prisma.db.customerSnapshot.findUnique.mockResolvedValue(null)
 
       await expect(
         service.create(
@@ -103,16 +97,17 @@ describe('OrdersService', () => {
           'corr-1',
           'cust-1'
         )
-      ).rejects.toBeInstanceOf(NotFoundException)
+      ).rejects.toBeInstanceOf(ServiceUnavailableException)
     })
 
     it('persists and publishes a new order', async () => {
       const created = buildOrder()
       prisma.db.order.findUnique.mockResolvedValue(null)
-      customersClient.getById.mockResolvedValue({
-        id: 'cust-1',
-        name: 'Cliente',
-        taxId: '20100000001'
+      prisma.db.customerSnapshot.findUnique.mockResolvedValue({
+        customerId: 'cust-1',
+        taxId: '20100000001',
+        assignedWarehouseId: 'trujillo',
+        status: 'ACTIVE'
       })
       prisma.db.order.create.mockResolvedValue(created)
       eventBridge.publishOrderCreated.mockResolvedValue(undefined)
@@ -125,17 +120,17 @@ describe('OrdersService', () => {
       )
 
       expect(result.status).toBe(OrderStatus.PENDING)
-      expect(customersClient.getById).toHaveBeenCalledWith('cust-1')
+      expect(prisma.db.customerSnapshot.findUnique).toHaveBeenCalledWith({
+        where: { customerId: 'cust-1' }
+      })
       expect(eventBridge.publishOrderCreated).toHaveBeenCalledOnce()
     })
 
     it('fails when event publication fails after persistence', async () => {
       const created = buildOrder()
       prisma.db.order.findUnique.mockResolvedValue(null)
-      customersClient.getById.mockResolvedValue({
-        id: 'cust-1',
-        name: 'Cliente',
-        taxId: '20100000001'
+      prisma.db.customerSnapshot.findUnique.mockResolvedValue({
+        customerId: 'cust-1'
       })
       prisma.db.order.create.mockResolvedValue(created)
       eventBridge.publishOrderCreated.mockRejectedValue(new Error('bus down'))
