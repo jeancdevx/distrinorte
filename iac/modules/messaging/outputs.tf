@@ -43,7 +43,17 @@ output "inventory_work_dlq_url" {
   value       = aws_sqs_queue.inventory_work_dlq.url
 }
 
+output "inventory_work_dlq_name" {
+  description = "Nombre de la DLQ inventory-work"
+  value       = aws_sqs_queue.inventory_work_dlq.name
+}
+
 output "orders_events_dlq_url" {
   description = "URL de la DLQ orders-events"
   value       = aws_sqs_queue.orders_events_dlq.url
+}
+
+output "orders_events_dlq_name" {
+  description = "Nombre de la DLQ orders-events"
+  value       = aws_sqs_queue.orders_events_dlq.name
 }
