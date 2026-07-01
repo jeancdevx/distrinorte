@@ -3,7 +3,11 @@ export const EVENT_SOURCE = 'distrinorte'
 export const EventDetailType = {
   OrderCreated: 'order.created',
   StockReserved: 'order.stock_reserved',
-  StockRejected: 'order.stock_rejected'
+  StockRejected: 'order.stock_rejected',
+  CustomerRegistered: 'customer.registered',
+  CustomerUpdated: 'customer.updated',
+  CatalogPriceUpdated: 'catalog.price_updated',
+  AvailabilityUpdated: 'availability.updated'
 } as const
 
 export type EventDetailTypeName =
