@@ -173,7 +173,7 @@ module "customers_service" {
     NODE_ENV          = var.environment
     DATABASE_HOST     = module.rds.endpoint
     DATABASE_PORT     = tostring(module.rds.port)
-    DATABASE_NAME     = module.rds.db_name
+    DATABASE_NAME     = module.rds.service_database_names.customers
     DATABASE_USER     = module.rds.username
     DATABASE_PASSWORD = var.db_password
   }
@@ -209,7 +209,7 @@ module "inventory_service" {
     AWS_REGION                             = var.aws_region
     DATABASE_HOST                          = module.rds.endpoint
     DATABASE_PORT                          = tostring(module.rds.port)
-    DATABASE_NAME                          = module.rds.db_name
+    DATABASE_NAME                          = module.rds.service_database_names.inventory
     DATABASE_USER                          = module.rds.username
     DATABASE_PASSWORD                      = var.db_password
     REDIS_HOST                             = module.elasticache.primary_endpoint
@@ -253,9 +253,10 @@ module "orders_service" {
     AWS_REGION              = var.aws_region
     DATABASE_HOST           = module.rds.endpoint
     DATABASE_PORT           = tostring(module.rds.port)
-    DATABASE_NAME           = module.rds.db_name
+    DATABASE_NAME           = module.rds.service_database_names.orders
     DATABASE_USER           = module.rds.username
     DATABASE_PASSWORD       = var.db_password
+    CUSTOMERS_SERVICE_URL   = "http://${module.alb.alb_dns_name}/customers"
     EVENT_BUS_NAME          = module.messaging.event_bus_name
     ORDERS_EVENTS_QUEUE_URL = module.messaging.orders_events_queue_url
   }
