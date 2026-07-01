@@ -33,6 +33,11 @@ output "stage_arn" {
   value       = aws_api_gateway_stage.main.arn
 }
 
+output "api_gateway_name" {
+  description = "Nombre del REST API"
+  value       = aws_api_gateway_rest_api.main.name
+}
+
 output "authorizer_id" {
   description = "ID del Cognito authorizer"
   value       = aws_api_gateway_authorizer.cognito.id
