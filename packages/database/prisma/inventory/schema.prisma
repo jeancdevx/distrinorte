@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../../generated/inventory"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Warehouse {
+  id        String   @id
+  name      String
+  isCentral Boolean  @default(false) @map("is_central")
+  timezone  String   @default("America/Lima")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("warehouses")
+}
+
+model TransferMatrix {
+  fromWarehouseId String @map("from_warehouse_id")
+  toWarehouseId   String @map("to_warehouse_id")
+  businessDays    Int    @map("business_days")
+  cutoffHour      Int    @default(14) @map("cutoff_hour")
+
+  @@id([fromWarehouseId, toWarehouseId])
+  @@map("transfer_matrix")
+}
+
+model Inventory {
+  sku         String
+  warehouseId String   @map("warehouse_id")
+  quantity    Int
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@id([sku, warehouseId])
+  @@map("inventory")
+}
+
+model Reservation {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  sku         String
+  warehouseId String   @map("warehouse_id")
+  quantity    Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("reservations")
+}
