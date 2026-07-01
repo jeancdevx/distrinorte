@@ -10,7 +10,14 @@ import {
 
 describe('CustomersService (integration)', () => {
   const { customers: prisma } = getTestPrismaClients()
-  const service = new CustomersService({ db: prisma } as PrismaService)
+  const eventBridge = {
+    publishCustomerRegistered: async () => undefined,
+    publishCustomerUpdated: async () => undefined
+  }
+  const service = new CustomersService(
+    { db: prisma } as PrismaService,
+    eventBridge as never
+  )
 
   beforeEach(async () => {
     await resetDatabase()
