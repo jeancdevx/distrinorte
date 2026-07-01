@@ -95,3 +95,29 @@ variable "performance_insights_enabled" {
   type        = bool
   default     = false
 }
+
+variable "use_aurora" {
+  description = "Usar Aurora PostgreSQL cluster en lugar de RDS PostgreSQL instance"
+  type        = bool
+  default     = false
+}
+
+variable "aurora_instance_class" {
+  description = "Clase de instancia Aurora (solo si use_aurora = true)"
+  type        = string
+  default     = "db.t4g.medium"
+}
+
+variable "service_database_names" {
+  description = "Nombres de bases logicas por dominio"
+  type = object({
+    customers = string
+    orders    = string
+    inventory = string
+  })
+  default = {
+    customers = "customers_db"
+    orders    = "orders_db"
+    inventory = "inventory_db"
+  }
+}
