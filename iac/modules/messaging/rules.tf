@@ -42,3 +42,23 @@ resource "aws_cloudwatch_event_rule" "stock_rejected" {
     Name = "${local.name_prefix}-stock-rejected-rule"
   })
 }
+
+resource "aws_cloudwatch_event_rule" "projection_events" {
+  name           = "${local.name_prefix}-projection-events-rule"
+  description    = "Route read-model projection events to projections-work"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+
+  event_pattern = jsonencode({
+    source = [var.event_source]
+    detail-type = [
+      "customer.registered",
+      "customer.updated",
+      "catalog.price_updated",
+      "availability.updated",
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${local.name_prefix}-projection-events-rule"
+  })
+}
