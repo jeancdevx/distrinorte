@@ -14,9 +14,9 @@ resource "aws_rds_cluster" "main" {
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = var.security_group_ids
 
-  storage_encrypted = true
-  backup_retention_period = var.backup_retention_period
-  preferred_backup_window = "03:00-04:00"
+  storage_encrypted            = true
+  backup_retention_period      = var.backup_retention_period
+  preferred_backup_window      = "03:00-04:00"
   preferred_maintenance_window = "mon:04:00-mon:05:00"
 
   deletion_protection = var.deletion_protection
