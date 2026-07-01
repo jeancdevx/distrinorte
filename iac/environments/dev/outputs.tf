@@ -260,3 +260,13 @@ output "github_actions_role_arn" {
   description = "Rol OIDC para GitHub Actions"
   value       = module.iam.github_actions_role_arn
 }
+
+output "observability_dashboard_name" {
+  description = "Dashboard CloudWatch de operaciones"
+  value       = module.observability.dashboard_name
+}
+
+output "observability_sns_topic_arn" {
+  description = "Topic SNS para alarmas operativas"
+  value       = module.observability.sns_topic_arn
+}

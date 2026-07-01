@@ -440,8 +440,40 @@ module "route53_aliases" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Fase 6 — Observabilidad
-# -----------------------------------------------------------------------------
 
-# module "observability" { ... }
+module "observability" {
+  source = "../../modules/observability"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+  aws_region   = var.aws_region
+
+  api_gateway_name  = module.apigateway.api_gateway_name
+  api_gateway_stage = module.apigateway.stage_name
+
+  alb_arn_suffix            = module.alb.lb_arn_suffix
+  target_group_arn_suffixes = module.alb.target_group_arn_suffixes
+  ecs_cluster_name          = module.ecs_cluster.cluster_name
+  ecs_service_names         = ["customers-service", "inventory-service", "orders-service", "catalog-service"]
+
+  ecs_log_group_names = {
+    customers-service = module.customers_service.log_group_name
+    inventory-service = module.inventory_service.log_group_name
+    orders-service    = module.orders_service.log_group_name
+    catalog-service   = module.catalog_service.log_group_name
+    seed-runner       = module.seed_runner_task.log_group_name
+  }
+
+  sqs_queue_names = {
+    inventory-work = module.messaging.inventory_work_queue_name
+    orders-events  = module.messaging.orders_events_queue_name
+  }
+
+  sqs_dlq_names = {
+    inventory-work = module.messaging.inventory_work_dlq_name
+    orders-events  = module.messaging.orders_events_dlq_name
+  }
+
+  alarm_email = var.observability_alarm_email
+}

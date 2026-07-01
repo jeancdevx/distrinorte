@@ -355,3 +355,10 @@ variable "terraform_state_bucket" {
   default     = null
   nullable    = true
 }
+
+variable "observability_alarm_email" {
+  description = "Email para alarmas CloudWatch (SNS). Null = topic sin suscripcion"
+  type        = string
+  default     = null
+  nullable    = true
+}

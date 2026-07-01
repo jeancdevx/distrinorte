@@ -63,6 +63,8 @@ github_oidc_branches             = ["develop", "production"]
 github_oidc_environments         = ["dev"]
 github_actions_attach_power_user = true
 
+observability_alarm_email = "jcode2006@gmail.com"
+
 tags = {
   ManagedBy = "terraform"
   Project   = "distrinorte"
