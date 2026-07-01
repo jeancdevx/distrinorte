@@ -6,10 +6,10 @@ import { CorrelationIdInterceptor } from '@distrinorte/shared'
 import { HealthModule } from './health/health.module.js'
 
 import { CatalogModule } from './catalog/catalog.module.js'
-import { RedisModule } from './redis/redis.module.js'
+import { ProjectionsModule } from './projections/projections.module.js'
 
 @Module({
-  imports: [RedisModule, HealthModule, CatalogModule],
+  imports: [HealthModule, CatalogModule, ProjectionsModule],
   providers: [
     {
       provide: APP_INTERCEPTOR,
