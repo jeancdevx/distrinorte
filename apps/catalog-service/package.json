@@ -12,12 +12,14 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1075.0",
+    "@aws-sdk/client-eventbridge": "3.1075.0",
+    "@aws-sdk/client-sqs": "3.1075.0",
     "@aws-sdk/lib-dynamodb": "3.1075.0",
+    "@distrinorte/events": "workspace:*",
     "@distrinorte/shared": "workspace:*",
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
     "@nestjs/platform-express": "11.1.27",
-    "ioredis": "5.11.1",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
