@@ -11,21 +11,49 @@ const databasePackageDir = join(setupDir, '../../../database')
 
 export default async function globalSetup(): Promise<() => Promise<void>> {
   const container = await new PostgreSqlContainer('postgres:17-alpine')
-    .withDatabase('distrinorte_test')
+    .withDatabase('postgres')
     .withUsername('test')
     .withPassword('test')
     .start()
 
-  const databaseUrl = container.getConnectionUri()
+  const host = container.getHost()
+  const port = container.getMappedPort(5432)
 
-  writeFileSync(statePath, JSON.stringify({ DATABASE_URL: databaseUrl }))
+  writeFileSync(
+    statePath,
+    JSON.stringify({
+      DATABASE_HOST: host,
+      DATABASE_PORT: String(port),
+      DATABASE_USER: 'test',
+      DATABASE_PASSWORD: 'test',
+      DATABASE_ADMIN_NAME: 'postgres',
+      DATABASE_NAME_CUSTOMERS: 'customers_db',
+      DATABASE_NAME_ORDERS: 'orders_db',
+      DATABASE_NAME_INVENTORY: 'inventory_db'
+    })
+  )
 
-  execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
+  const env = {
+    ...process.env,
+    DATABASE_HOST: host,
+    DATABASE_PORT: String(port),
+    DATABASE_USER: 'test',
+    DATABASE_PASSWORD: 'test',
+    DATABASE_ADMIN_NAME: 'postgres',
+    DATABASE_NAME_CUSTOMERS: 'customers_db',
+    DATABASE_NAME_ORDERS: 'orders_db',
+    DATABASE_NAME_INVENTORY: 'inventory_db'
+  }
+
+  execFileSync('pnpm', ['db:ensure-databases'], {
     cwd: databasePackageDir,
-    env: {
-      ...process.env,
-      DATABASE_URL: databaseUrl
-    },
+    env,
+    stdio: 'inherit'
+  })
+
+  execFileSync('pnpm', ['db:migrate:deploy'], {
+    cwd: databasePackageDir,
+    env,
     stdio: 'inherit'
   })
 
