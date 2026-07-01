@@ -74,8 +74,8 @@ cloudfront_assets_aliases = ["assets.galaxymorph.com"]
 cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
 cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
 
-# ECR / CI-CD (Fase C)
-container_image_tag = "latest"
+# ECR / CI-CD — el pipeline usa TF_VAR_container_image_tag=<git-sha>; no usar "latest" en ECS.
+# container_image_tag = "REPLACE_AFTER_FIRST_CI_DEPLOY"
 
 enable_github_actions_oidc     = true
 github_repository              = "jeancdevx/distrinorte"

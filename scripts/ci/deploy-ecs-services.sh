@@ -14,11 +14,19 @@ deploy_if_changed() {
   fi
 
   local ecs_service="${PREFIX}-${service}"
-  echo "Rolling deploy ${ecs_service}"
+  local task_def_arn
+
+  task_def_arn="$(aws ecs describe-task-definition \
+    --task-definition "${ecs_service}" \
+    --query 'taskDefinition.taskDefinitionArn' \
+    --output text)"
+
+  echo "Rolling deploy ${ecs_service} with ${task_def_arn}"
 
   aws ecs update-service \
     --cluster "${CLUSTER}" \
     --service "${ecs_service}" \
+    --task-definition "${task_def_arn}" \
     --force-new-deployment \
     --no-cli-pager
 

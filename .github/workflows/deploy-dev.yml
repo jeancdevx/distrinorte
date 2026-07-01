@@ -133,6 +133,7 @@ jobs:
         id: image-tags
         env:
           IMAGE_TAG: ${{ github.sha }}
+          ECR_REPOSITORY_PREFIX: distrinorte-dev
         run: |
           set -euo pipefail
           TAGS_JSON="$(bash scripts/ci/resolve-image-tags.sh "${IMAGE_TAG}" \
@@ -156,6 +157,20 @@ jobs:
           CHANGED_catalog_service: ${{ needs.changes.outputs.catalog-service }}
           CHANGED_seed_runner: ${{ needs.changes.outputs.seed-runner }}
         run: bash scripts/ci/build-and-push-images.sh
+
+      - name: Verify ECR image tags exist
+        if:
+          needs.changes.outputs.terraform == 'true' ||
+          needs.changes.outputs.customers-service == 'true' ||
+          needs.changes.outputs.inventory-service == 'true' ||
+          needs.changes.outputs.orders-service == 'true' ||
+          needs.changes.outputs.catalog-service == 'true' ||
+          needs.changes.outputs.seed-runner == 'true'
+        env:
+          ECR_REPOSITORY_PREFIX: distrinorte-dev
+        run:
+          bash scripts/ci/verify-ecr-image-tags.sh '${{
+          steps.image-tags.outputs.tags }}'
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
