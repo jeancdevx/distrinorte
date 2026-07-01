@@ -1,4 +1,6 @@
 resource "aws_db_instance" "main" {
+  count = var.use_aurora ? 0 : 1
+
   identifier = local.identifier
 
   engine         = "postgres"

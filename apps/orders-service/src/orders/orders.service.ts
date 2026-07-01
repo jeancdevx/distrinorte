@@ -5,13 +5,14 @@ import {
   ServiceUnavailableException
 } from '@nestjs/common'
 
-import { OrderStatus } from '@distrinorte/database'
+import { OrderStatus } from '@distrinorte/database/orders'
 
 import {
   parseCreateOrderInput,
   type CreateOrderInput
 } from './dto/create-order.dto.js'
 
+import { CustomersClient } from '../clients/customers.client.js'
 import { PrismaService } from '../database/prisma.service.js'
 import { EventBridgePublisher } from '../messaging/eventbridge.publisher.js'
 
@@ -31,7 +32,8 @@ export type OrderRecord = {
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBridge: EventBridgePublisher
+    private readonly eventBridge: EventBridgePublisher,
+    private readonly customersClient: CustomersClient
   ) {}
 
   async create(
@@ -58,13 +60,7 @@ export class OrdersService {
       throw new BadRequestException('Invalid order payload')
     }
 
-    const customer = await this.prisma.db.customer.findUnique({
-      where: { id: customerId }
-    })
-
-    if (!customer) {
-      throw new NotFoundException('Customer not found')
-    }
+    await this.customersClient.getById(customerId)
 
     const order = await this.prisma.db.order.create({
       data: {

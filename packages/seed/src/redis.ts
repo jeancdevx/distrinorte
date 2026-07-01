@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 
-import { createPrismaClient } from '@distrinorte/database'
+import { createInventoryPrismaClient } from '@distrinorte/database/inventory'
 import {
   buildStockCacheKey,
   resolveStockCacheTtlSeconds
@@ -31,7 +31,7 @@ export async function warmRedisStockFromRds(): Promise<void> {
     throw new Error('REDIS_HOST is required')
   }
 
-  const prisma = createPrismaClient()
+  const prisma = createInventoryPrismaClient()
   const redis = new Redis({
     host,
     port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
@@ -64,7 +64,7 @@ export async function warmRedisStockFromRds(): Promise<void> {
       ttlSeconds === undefined ? 'no expiry' : `TTL ${ttlSeconds}s`
 
     console.log(
-      `Redis: warmed ${rows.length} stock keys from RDS (${ttlLabel})`
+      `Redis: warmed ${rows.length} stock keys from inventory_db (${ttlLabel})`
     )
   } finally {
     await prisma.$disconnect()

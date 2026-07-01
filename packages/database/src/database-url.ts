@@ -1,3 +1,11 @@
+export type DatabaseDomain = 'customers' | 'orders' | 'inventory'
+
+export const SERVICE_DATABASE_NAMES: Record<DatabaseDomain, string> = {
+  customers: 'customers_db',
+  orders: 'orders_db',
+  inventory: 'inventory_db'
+}
+
 function resolveDatabaseHost(): string | undefined {
   if (process.env.DATABASE_HOST) {
     return process.env.DATABASE_HOST
@@ -42,25 +50,59 @@ function withSslQueryParams(url: string): string {
   return `${url}${separator}sslmode=no-verify`
 }
 
-export function resolveDatabaseUrl(): string {
-  if (process.env.DATABASE_URL) {
-    return withSslQueryParams(process.env.DATABASE_URL)
+function resolveDatabaseName(domain: DatabaseDomain): string {
+  const envKey = `DATABASE_NAME_${domain.toUpperCase()}`
+  const fromEnv = process.env[envKey]
+
+  if (fromEnv) {
+    return fromEnv
   }
 
+  return SERVICE_DATABASE_NAMES[domain]
+}
+
+function buildDatabaseUrl(databaseName: string): string {
   const host = process.env.DATABASE_HOST
-  const name = process.env.DATABASE_NAME
   const user = process.env.DATABASE_USER
   const password = process.env.DATABASE_PASSWORD
 
-  if (host && name && user && password) {
+  if (host && user && password) {
     const port = process.env.DATABASE_PORT ?? '5432'
     const encodedUser = encodeURIComponent(user)
     const encodedPassword = encodeURIComponent(password)
 
     return withSslQueryParams(
-      `postgresql://${encodedUser}:${encodedPassword}@${host}:${port}/${name}?schema=public`
+      `postgresql://${encodedUser}:${encodedPassword}@${host}:${port}/${databaseName}?schema=public`
     )
   }
 
-  return 'postgresql://user:password@localhost:5432/distrinorte?schema=public'
+  return withSslQueryParams(
+    `postgresql://user:password@localhost:5432/${databaseName}?schema=public`
+  )
+}
+
+export function resolveDatabaseUrl(domain: DatabaseDomain): string {
+  const domainUrlKey =
+    domain === 'customers'
+      ? 'DATABASE_URL_CUSTOMERS'
+      : domain === 'orders'
+        ? 'DATABASE_URL_ORDERS'
+        : 'DATABASE_URL_INVENTORY'
+
+  const domainUrl = process.env[domainUrlKey]
+
+  if (domainUrl) {
+    return withSslQueryParams(domainUrl)
+  }
+
+  if (!process.env.DATABASE_HOST && process.env.DATABASE_URL) {
+    return withSslQueryParams(process.env.DATABASE_URL)
+  }
+
+  return buildDatabaseUrl(resolveDatabaseName(domain))
+}
+
+export function resolveAdminDatabaseUrl(): string {
+  const adminDatabase = process.env.DATABASE_ADMIN_NAME ?? 'postgres'
+  return buildDatabaseUrl(adminDatabase)
 }

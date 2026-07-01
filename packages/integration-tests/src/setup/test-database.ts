@@ -1,31 +1,65 @@
-import { createPrismaClient, type PrismaClient } from '@distrinorte/database'
+import {
+  createCustomersPrismaClient,
+  type PrismaClient as CustomersPrismaClient
+} from '@distrinorte/database/customers'
+import {
+  createInventoryPrismaClient,
+  type PrismaClient as InventoryPrismaClient
+} from '@distrinorte/database/inventory'
+import {
+  createOrdersPrismaClient,
+  type PrismaClient as OrdersPrismaClient
+} from '@distrinorte/database/orders'
 
-let client: PrismaClient | undefined
+export type TestPrismaClients = {
+  customers: CustomersPrismaClient
+  orders: OrdersPrismaClient
+  inventory: InventoryPrismaClient
+}
 
-export function getTestPrisma(): PrismaClient {
-  if (!client) {
-    client = createPrismaClient()
+let clients: TestPrismaClients | undefined
+
+export function getTestPrismaClients(): TestPrismaClients {
+  if (!clients) {
+    clients = {
+      customers: createCustomersPrismaClient(),
+      orders: createOrdersPrismaClient(),
+      inventory: createInventoryPrismaClient()
+    }
   }
 
-  return client
+  return clients
+}
+
+/** @deprecated use getTestPrismaClients().orders */
+export function getTestPrisma(): OrdersPrismaClient {
+  return getTestPrismaClients().orders
 }
 
 export async function disconnectTestPrisma(): Promise<void> {
-  if (client) {
-    await client.$disconnect()
-    client = undefined
+  if (!clients) {
+    return
   }
+
+  await Promise.all([
+    clients.customers.$disconnect(),
+    clients.orders.$disconnect(),
+    clients.inventory.$disconnect()
+  ])
+
+  clients = undefined
 }
 
-export async function resetDatabase(prisma: PrismaClient): Promise<void> {
-  await prisma.$executeRawUnsafe(`
-    TRUNCATE TABLE
-      reservations,
-      order_lines,
-      orders,
-      inventory,
-      accounts,
-      customers
-    RESTART IDENTITY CASCADE
+export async function resetDatabase(
+  prismaClients: TestPrismaClients = getTestPrismaClients()
+): Promise<void> {
+  await prismaClients.orders.$executeRawUnsafe(`
+    TRUNCATE TABLE order_lines, orders RESTART IDENTITY CASCADE
+  `)
+  await prismaClients.customers.$executeRawUnsafe(`
+    TRUNCATE TABLE accounts, customers RESTART IDENTITY CASCADE
+  `)
+  await prismaClients.inventory.$executeRawUnsafe(`
+    TRUNCATE TABLE reservations, inventory, transfer_matrix, warehouses RESTART IDENTITY CASCADE
   `)
 }

@@ -1,25 +1,26 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-
-import { PrismaClient } from '../generated/client.js'
-
-import { resolveDatabaseUrl, resolvePgSslConfig } from './database-url.js'
-
-export * from '../generated/client.js'
 export {
+  createCustomersPrismaClient,
+  createPrismaClient as createCustomersPrismaClientAlias
+} from './customers.js'
+
+export {
+  createOrdersPrismaClient,
+  createPrismaClient as createOrdersPrismaClientAlias,
+  OrderStatus
+} from './orders.js'
+
+export {
+  createInventoryPrismaClient,
+  createPrismaClient as createInventoryPrismaClientAlias
+} from './inventory.js'
+
+export {
+  resolveAdminDatabaseUrl,
   resolveDatabaseUrl,
   resolvePgSslConfig,
-  shouldUseDatabaseSsl
+  SERVICE_DATABASE_NAMES,
+  shouldUseDatabaseSsl,
+  type DatabaseDomain
 } from './database-url.js'
 
-export function createPrismaClient(
-  databaseUrl = resolveDatabaseUrl()
-): PrismaClient {
-  const ssl = resolvePgSslConfig()
-  const adapter = new PrismaPg(
-    ssl
-      ? { connectionString: databaseUrl, ssl }
-      : { connectionString: databaseUrl }
-  )
-
-  return new PrismaClient({ adapter })
-}
+export { createOrdersPrismaClient as createPrismaClient } from './orders.js'

@@ -4,6 +4,7 @@ import {
   Get,
   Headers,
   HttpCode,
+  Param,
   Post,
   Query
 } from '@nestjs/common'
@@ -42,5 +43,14 @@ export class CustomersController {
     const { items, total } = await this.customersService.list(skip, limit)
 
     return ok(toPaginatedResult(items, total, page, limit), correlationId)
+  }
+
+  @Get(':customerId')
+  async findOne(
+    @Param('customerId') customerId: string,
+    @Headers(HttpHeaders.CorrelationId) correlationId?: string
+  ) {
+    const customer = await this.customersService.getById(customerId)
+    return ok(customer, correlationId)
   }
 }

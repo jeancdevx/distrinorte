@@ -4,16 +4,16 @@ import { CustomersService } from '../../../../apps/customers-service/src/custome
 import { PrismaService } from '../../../../apps/customers-service/src/database/prisma.service.js'
 import {
   disconnectTestPrisma,
-  getTestPrisma,
+  getTestPrismaClients,
   resetDatabase
 } from '../setup/test-database.js'
 
 describe('CustomersService (integration)', () => {
-  const prisma = getTestPrisma()
+  const { customers: prisma } = getTestPrismaClients()
   const service = new CustomersService({ db: prisma } as PrismaService)
 
   beforeEach(async () => {
-    await resetDatabase(prisma)
+    await resetDatabase()
   })
 
   afterAll(async () => {

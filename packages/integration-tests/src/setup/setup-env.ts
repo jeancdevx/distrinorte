@@ -8,9 +8,12 @@ const statePath = join(
 )
 
 if (existsSync(statePath)) {
-  const state = JSON.parse(readFileSync(statePath, 'utf8')) as {
-    DATABASE_URL: string
-  }
+  const state = JSON.parse(readFileSync(statePath, 'utf8')) as Record<
+    string,
+    string
+  >
 
-  process.env.DATABASE_URL = state.DATABASE_URL
+  for (const [key, value] of Object.entries(state)) {
+    process.env[key] = value
+  }
 }
