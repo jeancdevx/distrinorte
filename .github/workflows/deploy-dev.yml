@@ -3,10 +3,14 @@ name: Deploy Dev
 on:
   workflow_dispatch:
     inputs:
+      deploy_all:
+        description: Build/push/deploy todos los servicios (ignora path filters)
+        type: boolean
+        default: true
       run_seed:
         description: Ejecutar migrate + seed en ECS tras el deploy
         type: boolean
-        default: true
+        default: false
   push:
     branches:
       - develop
@@ -21,9 +25,95 @@ env:
   TF_IN_AUTOMATION: true
   TF_VAR_environment: dev
   TF_VAR_project_name: distrinorte
+  ECS_CLUSTER: distrinorte-dev-cluster
+  ECS_NAME_PREFIX: distrinorte-dev
+  ECR_REPOSITORY_PREFIX: distrinorte-dev
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      any-deploy: ${{ steps.resolve.outputs.any-deploy }}
+      customers-service: ${{ steps.resolve.outputs.customers-service }}
+      inventory-service: ${{ steps.resolve.outputs.inventory-service }}
+      orders-service: ${{ steps.resolve.outputs.orders-service }}
+      catalog-service: ${{ steps.resolve.outputs.catalog-service }}
+      seed-runner: ${{ steps.resolve.outputs.seed-runner }}
+      seed-data: ${{ steps.resolve.outputs.seed-data }}
+      terraform: ${{ steps.resolve.outputs.terraform }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590
+        id: filter
+        with:
+          filters: .github/path-filters.yml
+
+      - name: Resolve deploy targets
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOY_ALL: ${{ github.event.inputs.deploy_all }}
+          FILTER_CUSTOMERS: ${{ steps.filter.outputs.customers-service }}
+          FILTER_INVENTORY: ${{ steps.filter.outputs.inventory-service }}
+          FILTER_ORDERS: ${{ steps.filter.outputs.orders-service }}
+          FILTER_CATALOG: ${{ steps.filter.outputs.catalog-service }}
+          FILTER_SEED_RUNNER: ${{ steps.filter.outputs.seed-runner }}
+          FILTER_SEED_DATA: ${{ steps.filter.outputs.seed-data }}
+          FILTER_TERRAFORM: ${{ steps.filter.outputs.terraform }}
+        run: |
+          set -euo pipefail
+
+          bool() {
+            [ "$1" = "true" ] && echo true || echo false
+          }
+
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${DEPLOY_ALL}" = "true" ]; then
+            CUSTOMERS=true
+            INVENTORY=true
+            ORDERS=true
+            CATALOG=true
+            SEED_RUNNER=true
+            SEED_DATA=true
+            TERRAFORM=true
+          else
+            CUSTOMERS="${FILTER_CUSTOMERS}"
+            INVENTORY="${FILTER_INVENTORY}"
+            ORDERS="${FILTER_ORDERS}"
+            CATALOG="${FILTER_CATALOG}"
+            SEED_RUNNER="${FILTER_SEED_RUNNER}"
+            SEED_DATA="${FILTER_SEED_DATA}"
+            TERRAFORM="${FILTER_TERRAFORM}"
+          fi
+
+          ANY=false
+          for flag in "${CUSTOMERS}" "${INVENTORY}" "${ORDERS}" "${CATALOG}" "${SEED_RUNNER}" "${TERRAFORM}"; do
+            if [ "${flag}" = "true" ]; then
+              ANY=true
+              break
+            fi
+          done
+
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${DEPLOY_ALL}" = "true" ]; then
+            ANY=true
+          fi
+
+          {
+            echo "any-deploy=${ANY}"
+            echo "customers-service=$(bool "${CUSTOMERS}")"
+            echo "inventory-service=$(bool "${INVENTORY}")"
+            echo "orders-service=$(bool "${ORDERS}")"
+            echo "catalog-service=$(bool "${CATALOG}")"
+            echo "seed-runner=$(bool "${SEED_RUNNER}")"
+            echo "seed-data=$(bool "${SEED_DATA}")"
+            echo "terraform=$(bool "${TERRAFORM}")"
+          } >> "${GITHUB_OUTPUT}"
+
   deploy:
+    name: Deploy dev
+    needs: changes
+    if: needs.changes.outputs.any-deploy == 'true'
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -39,31 +129,46 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
 
-      - name: Build and push images
+      - name: Resolve image tags
+        id: image-tags
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for service in customers-service inventory-service orders-service catalog-service; do
-            image="${ECR_REGISTRY}/distrinorte-dev-${service}:${IMAGE_TAG}"
-            docker build -f docker/Dockerfile.service --build-arg "SERVICE=${service}" -t "${image}" .
-            docker push "${image}"
-            docker tag "${image}" "${ECR_REGISTRY}/distrinorte-dev-${service}:latest"
-            docker push "${ECR_REGISTRY}/distrinorte-dev-${service}:latest"
-          done
+          TAGS_JSON="$(bash scripts/ci/resolve-image-tags.sh "${IMAGE_TAG}" \
+            "customers-service:${{ needs.changes.outputs.customers-service }}" \
+            "inventory-service:${{ needs.changes.outputs.inventory-service }}" \
+            "orders-service:${{ needs.changes.outputs.orders-service }}" \
+            "catalog-service:${{ needs.changes.outputs.catalog-service }}" \
+            "seed-runner:${{ needs.changes.outputs.seed-runner }}")"
+          echo "tags=${TAGS_JSON}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved image tags: ${TAGS_JSON}"
 
-          seed_image="${ECR_REGISTRY}/distrinorte-dev-seed-runner:${IMAGE_TAG}"
-          docker build -f docker/Dockerfile.seed -t "${seed_image}" .
-          docker push "${seed_image}"
-          docker tag "${seed_image}" "${ECR_REGISTRY}/distrinorte-dev-seed-runner:latest"
-          docker push "${ECR_REGISTRY}/distrinorte-dev-seed-runner:latest"
+      - name: Build and push changed images
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          CHANGED_customers_service:
+            ${{ needs.changes.outputs.customers-service }}
+          CHANGED_inventory_service:
+            ${{ needs.changes.outputs.inventory-service }}
+          CHANGED_orders_service: ${{ needs.changes.outputs.orders-service }}
+          CHANGED_catalog_service: ${{ needs.changes.outputs.catalog-service }}
+          CHANGED_seed_runner: ${{ needs.changes.outputs.seed-runner }}
+        run: bash scripts/ci/build-and-push-images.sh
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
           terraform_version: 1.11.4
 
       - name: Terraform apply
+        if:
+          needs.changes.outputs.terraform == 'true' ||
+          needs.changes.outputs.customers-service == 'true' ||
+          needs.changes.outputs.inventory-service == 'true' ||
+          needs.changes.outputs.orders-service == 'true' ||
+          needs.changes.outputs.catalog-service == 'true' ||
+          needs.changes.outputs.seed-runner == 'true'
         working-directory: iac/environments/dev
         env:
           TF_VAR_db_password: ${{ secrets.TF_VAR_db_password }}
@@ -71,6 +176,7 @@ jobs:
           TF_VAR_origin_verify_secret:
             ${{ secrets.TF_VAR_origin_verify_secret }}
           TF_VAR_container_image_tag: ${{ github.sha }}
+          TF_VAR_container_image_tags: ${{ steps.image-tags.outputs.tags }}
           TF_VAR_terraform_state_bucket: ${{ secrets.TF_STATE_BUCKET }}
         run: |
           terraform init -input=false \
@@ -79,7 +185,10 @@ jobs:
           terraform apply -var-file=ci.tfvars -auto-approve -input=false
 
       - name: Run seed task on ECS
-        if: github.event_name == 'push' || inputs.run_seed != false
+        if: |
+          needs.changes.outputs.seed-data == 'true' ||
+          needs.changes.outputs.seed-runner == 'true' ||
+          (github.event_name == 'workflow_dispatch' && inputs.run_seed == true)
         env:
           CLUSTER: distrinorte-dev-cluster
           TASK_FAMILY: distrinorte-dev-seed-runner
@@ -106,12 +215,18 @@ jobs:
             --output text)
           bash scripts/ci/wait-for-ecs-task.sh "${TASK_ARN}" "${CLUSTER}"
 
-      - name: Force ECS rolling deploy
-        run: |
-          set -euo pipefail
-          for service in distrinorte-dev-customers-service distrinorte-dev-inventory-service distrinorte-dev-orders-service distrinorte-dev-catalog-service; do
-            aws ecs update-service \
-              --cluster distrinorte-dev-cluster \
-              --service "${service}" \
-              --force-new-deployment
-          done
+      - name: Deploy changed ECS services
+        env:
+          CHANGED_customers_service:
+            ${{ needs.changes.outputs.customers-service }}
+          CHANGED_inventory_service:
+            ${{ needs.changes.outputs.inventory-service }}
+          CHANGED_orders_service: ${{ needs.changes.outputs.orders-service }}
+          CHANGED_catalog_service: ${{ needs.changes.outputs.catalog-service }}
+        run: bash scripts/ci/deploy-ecs-services.sh
+
+      - name: Smoke check
+        env:
+          SMOKE_BASE_URL: https://api.pedidos.galaxymorph.com
+          SMOKE_ACCESS_TOKEN: ${{ secrets.SMOKE_ACCESS_TOKEN }}
+        run: bash scripts/ci/smoke-dev.sh

@@ -26,12 +26,22 @@ locals {
 
   catalog_assets_base_url = "https://${var.route53_assets_record_name}"
 
+  ecs_service_names = toset([
+    "customers-service",
+    "inventory-service",
+    "orders-service",
+    "catalog-service",
+    "seed-runner",
+  ])
+
+  ecs_image_tag = {
+    for name in local.ecs_service_names :
+    name => lookup(var.container_image_tags, name, var.container_image_tag)
+  }
+
   ecr_image = {
-    customers-service = "${module.ecr.repository_urls["customers-service"]}:${var.container_image_tag}"
-    inventory-service = "${module.ecr.repository_urls["inventory-service"]}:${var.container_image_tag}"
-    orders-service    = "${module.ecr.repository_urls["orders-service"]}:${var.container_image_tag}"
-    catalog-service   = "${module.ecr.repository_urls["catalog-service"]}:${var.container_image_tag}"
-    seed-runner       = "${module.ecr.repository_urls["seed-runner"]}:${var.container_image_tag}"
+    for name in local.ecs_service_names :
+    name => "${module.ecr.repository_urls[name]}:${local.ecs_image_tag[name]}"
   }
 
   seed_runner_environment = {

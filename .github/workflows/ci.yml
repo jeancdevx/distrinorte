@@ -15,6 +15,53 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      customers-service: ${{ steps.resolve.outputs.customers-service }}
+      inventory-service: ${{ steps.resolve.outputs.inventory-service }}
+      orders-service: ${{ steps.resolve.outputs.orders-service }}
+      catalog-service: ${{ steps.resolve.outputs.catalog-service }}
+      seed-runner: ${{ steps.resolve.outputs.seed-runner }}
+      any-docker: ${{ steps.resolve.outputs.any-docker }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590
+        id: filter
+        with:
+          filters: .github/path-filters.yml
+
+      - name: Resolve docker targets
+        id: resolve
+        run: |
+          set -euo pipefail
+          bool() { [ "$1" = "true" ] && echo true || echo false; }
+
+          CUSTOMERS="${{ steps.filter.outputs.customers-service }}"
+          INVENTORY="${{ steps.filter.outputs.inventory-service }}"
+          ORDERS="${{ steps.filter.outputs.orders-service }}"
+          CATALOG="${{ steps.filter.outputs.catalog-service }}"
+          SEED="${{ steps.filter.outputs.seed-runner }}"
+
+          ANY=false
+          for flag in "${CUSTOMERS}" "${INVENTORY}" "${ORDERS}" "${CATALOG}" "${SEED}"; do
+            if [ "${flag}" = "true" ]; then
+              ANY=true
+              break
+            fi
+          done
+
+          {
+            echo "customers-service=$(bool "${CUSTOMERS}")"
+            echo "inventory-service=$(bool "${INVENTORY}")"
+            echo "orders-service=$(bool "${ORDERS}")"
+            echo "catalog-service=$(bool "${CATALOG}")"
+            echo "seed-runner=$(bool "${SEED}")"
+            echo "any-docker=${ANY}"
+          } >> "${GITHUB_OUTPUT}"
+
   quality:
     name: Lint, format, typecheck, build
     runs-on: ubuntu-latest
@@ -70,15 +117,34 @@ jobs:
 
   docker-build:
     name: Docker build smoke test
+    needs: changes
+    if: needs.changes.outputs.any-docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
-      - name: Build service images
+      - name: Build changed service images
+        env:
+          ECR_REGISTRY: example.invalid
+          IMAGE_TAG: ci
+          CHANGED_customers_service:
+            ${{ needs.changes.outputs.customers-service }}
+          CHANGED_inventory_service:
+            ${{ needs.changes.outputs.inventory-service }}
+          CHANGED_orders_service: ${{ needs.changes.outputs.orders-service }}
+          CHANGED_catalog_service: ${{ needs.changes.outputs.catalog-service }}
+          CHANGED_seed_runner: ${{ needs.changes.outputs.seed-runner }}
         run: |
           set -euo pipefail
-          docker build -f docker/Dockerfile.service --build-arg SERVICE=customers-service -t customers-service:ci .
-          docker build -f docker/Dockerfile.service --build-arg SERVICE=inventory-service -t inventory-service:ci .
-          docker build -f docker/Dockerfile.service --build-arg SERVICE=orders-service -t orders-service:ci .
-          docker build -f docker/Dockerfile.service --build-arg SERVICE=catalog-service -t catalog-service:ci .
-          docker build -f docker/Dockerfile.seed -t seed-runner:ci .
+          build_service() {
+            docker build -f docker/Dockerfile.service --build-arg "SERVICE=${1}" -t "${1}:ci" .
+          }
+          for service in customers-service inventory-service orders-service catalog-service; do
+            changed_var="CHANGED_${service//-/_}"
+            if [ "${!changed_var}" = "true" ]; then
+              build_service "${service}"
+            fi
+          done
+          if [ "${CHANGED_seed_runner}" = "true" ]; then
+            docker build -f docker/Dockerfile.seed -t seed-runner:ci .
+          fi

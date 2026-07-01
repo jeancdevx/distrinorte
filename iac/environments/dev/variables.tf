@@ -307,9 +307,15 @@ variable "route53_assets_record_name" {
 }
 
 variable "container_image_tag" {
-  description = "Tag de imagenes ECR para servicios ECS (ej. git SHA o latest)"
+  description = "Tag por defecto de imagenes ECR cuando no hay override por servicio"
   type        = string
   default     = "latest"
+}
+
+variable "container_image_tags" {
+  description = "Tags ECR por servicio ECS (customers-service, inventory-service, etc.)"
+  type        = map(string)
+  default     = {}
 }
 
 variable "enable_github_actions_oidc" {
