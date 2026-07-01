@@ -1,9 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
-import { buildStockCacheKey } from '@distrinorte/shared'
-
+import { AvailabilityRepository } from '../dynamodb/availability.repository.js'
 import { ProductsRepository } from '../dynamodb/products.repository.js'
-import { RedisService } from '../redis/redis.service.js'
 import { buildImageUrl } from './image-url.js'
 
 export type CatalogProduct = {
@@ -22,7 +20,7 @@ export class CatalogService {
 
   constructor(
     private readonly products: ProductsRepository,
-    private readonly redis: RedisService
+    private readonly availability: AvailabilityRepository
   ) {}
 
   async listProducts(
@@ -40,12 +38,15 @@ export class CatalogService {
     const products = await this.products.listActiveProducts(category)
     const total = products.length
     const pageItems = products.slice(skip, skip + limit)
-    const items = await this.enrichWithStock(pageItems, normalizedWarehouseId)
+    const items = await this.enrichWithAvailability(
+      pageItems,
+      normalizedWarehouseId
+    )
 
     return { items, total }
   }
 
-  private async enrichWithStock(
+  private async enrichWithAvailability(
     products: Array<{
       sku: string
       name: string
@@ -59,19 +60,19 @@ export class CatalogService {
       return []
     }
 
-    const keys = products.map(product =>
-      buildStockCacheKey(product.sku, warehouseId)
+    const stockBySku = await this.availability.batchGetAvailability(
+      warehouseId,
+      products.map(product => product.sku)
     )
-    const stockValues = await this.redis.client.mget(...keys)
 
-    return products.map((product, index) => {
-      const cachedStock = stockValues[index]
-      const stock = resolveCatalogStock(
-        product.sku,
-        warehouseId,
-        cachedStock,
-        this.logger
-      )
+    return products.map(product => {
+      const stock = stockBySku.get(product.sku)
+
+      if (stock === undefined) {
+        this.logger.warn(
+          `Availability read model miss (sku=${product.sku}, warehouseId=${warehouseId})`
+        )
+      }
 
       return {
         sku: product.sku,
@@ -80,29 +81,8 @@ export class CatalogService {
         category: product.category,
         imageKey: product.imageKey,
         imageUrl: buildImageUrl(product.imageKey),
-        stock
+        stock: stock ?? 0
       }
     })
   }
-}
-
-function resolveCatalogStock(
-  sku: string,
-  warehouseId: string,
-  cachedStock: string | null,
-  logger: Logger
-): number {
-  if (cachedStock === null) {
-    logger.error(
-      `Stock cache miss for catalog listing (sku=${sku}, warehouseId=${warehouseId})`
-    )
-    return 0
-  }
-
-  return parseStockQuantity(cachedStock)
-}
-
-function parseStockQuantity(value: string): number {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isNaN(parsed) ? 0 : parsed
 }
