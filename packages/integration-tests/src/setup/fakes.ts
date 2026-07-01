@@ -1,35 +1,15 @@
-import { NotFoundException } from '@nestjs/common'
-
-import type { PrismaClient as CustomersPrismaClient } from '@distrinorte/database/customers'
 import type {
+  AvailabilityUpdatedEvent,
   OrderCreatedEvent,
   StockRejectedEvent,
   StockReservedEvent
 } from '@distrinorte/events'
 
-import type { CustomerSummary } from '../../../../apps/orders-service/src/clients/customers.client.js'
-
-export class DirectCustomersClient {
-  constructor(private readonly prisma: CustomersPrismaClient) {}
-
-  async getById(customerId: string): Promise<CustomerSummary> {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId },
-      select: { id: true, name: true, taxId: true }
-    })
-
-    if (!customer) {
-      throw new NotFoundException('Customer not found')
-    }
-
-    return customer
-  }
-}
-
 export class FakeEventBridgePublisher {
   readonly orderCreated: OrderCreatedEvent[] = []
   readonly stockReserved: StockReservedEvent[] = []
   readonly stockRejected: StockRejectedEvent[] = []
+  readonly availabilityUpdated: AvailabilityUpdatedEvent[] = []
 
   async publishOrderCreated(detail: OrderCreatedEvent): Promise<void> {
     this.orderCreated.push(detail)
@@ -41,6 +21,12 @@ export class FakeEventBridgePublisher {
 
   async publishStockRejected(detail: StockRejectedEvent): Promise<void> {
     this.stockRejected.push(detail)
+  }
+
+  async publishAvailabilityUpdated(
+    detail: AvailabilityUpdatedEvent
+  ): Promise<void> {
+    this.availabilityUpdated.push(detail)
   }
 }
 
