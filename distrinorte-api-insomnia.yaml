@@ -400,8 +400,8 @@ collection:
       sortKey: -1000
       description: |
         Crear pedido async (202). Requiere header `idempotency-key`.
-        `customerId` debe existir en RDS (clientes del seed).
-        Tras 202, inventory confirma stock vía EventBridge → estado CONFIRMED.
+        `customerId` viene del JWT (`custom:customer_id`).
+        Tras 202, usar GET /orders/{orderId} para polling hasta CONFIRMED/REJECTED.
     children:
       - name: Create order (demo)
         meta:
@@ -413,6 +413,7 @@ collection:
           description: |
             Pedido demo con Bodega El Norte y 2× COCA-600ML.
 
+            `customerId` se toma del JWT (`custom:customer_id`), no del body.
             Cambia `idempotency-key` en cada pedido nuevo (o usa el environment `idempotency_key`).
             Re-enviar el mismo key devuelve el pedido existente (idempotencia).
         method: POST
@@ -431,7 +432,6 @@ collection:
           mimeType: application/json
           text: |
             {
-              "customerId": "{{ _.demo_customer_id }}",
               "warehouseId": "{{ _.warehouse_id }}",
               "lines": [
                 { "sku": "{{ _.demo_sku }}", "quantity": 2 }
@@ -468,13 +468,69 @@ collection:
           mimeType: application/json
           text: |
             {
-              "customerId": "{{ _.demo_customer_id_2 }}",
               "warehouseId": "piura",
               "lines": [
                 { "sku": "INCA-600ML", "quantity": 1 },
                 { "sku": "AGUA-SIN-GAS-625", "quantity": 3 }
               ]
             }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: List my orders
+        meta:
+          id: req_orders_list
+          created: 1750752000403
+          modified: 1750752000403
+          isPrivate: false
+          sortKey: -1003
+          description: |
+            Historial de pedidos del cliente autenticado (JWT `custom:customer_id`).
+            Filtro opcional `status`: PENDING | CONFIRMED | REJECTED.
+        method: GET
+        url: '{{ _.base_url }}/orders'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
+        parameters:
+          - name: page
+            value: '1'
+          - name: limit
+            value: '20'
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Get order by id
+        meta:
+          id: req_orders_get_by_id
+          created: 1750752000404
+          modified: 1750752000404
+          isPrivate: false
+          sortKey: -1004
+          description: |
+            Consulta estado de un pedido (polling tras POST 202).
+            Usa `order_id` del environment o del último POST.
+        method: GET
+        url: '{{ _.base_url }}/orders/{{ _.order_id }}'
+        authentication:
+          type: bearer
+          token: '{{ _.access_token }}'
+        headers:
+          - name: x-correlation-id
+            value: "{% uuid 'v4' %}"
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -586,6 +642,7 @@ environments:
     warehouse_id: chiclayo
     demo_sku: COCA-600ML
     idempotency_key: demo-order-001
+    order_id: PEGAR_orderId_del_POST
   subEnvironments:
     - name: DistriNorte Dev
       meta:
@@ -607,6 +664,7 @@ environments:
         warehouse_id: chiclayo
         demo_sku: COCA-600ML
         idempotency_key: demo-order-001
+        order_id: PEGAR_orderId_del_POST
     - name: API Gateway directo
       meta:
         id: env_distrinorte_apigw
@@ -621,3 +679,4 @@ environments:
         warehouse_id: chiclayo
         demo_sku: COCA-600ML
         idempotency_key: demo-order-001
+        order_id: PEGAR_orderId_del_POST
