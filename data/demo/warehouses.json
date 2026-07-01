@@ -1,0 +1,131 @@
+{
+  "warehouses": [
+    {
+      "id": "trujillo",
+      "name": "Trujillo — Sede central",
+      "isCentral": true
+    },
+    {
+      "id": "paijan",
+      "name": "Paiján",
+      "isCentral": false
+    },
+    {
+      "id": "chiclayo",
+      "name": "Chiclayo",
+      "isCentral": false
+    },
+    {
+      "id": "piura",
+      "name": "Piura",
+      "isCentral": false
+    },
+    {
+      "id": "cajamarca",
+      "name": "Cajamarca",
+      "isCentral": false
+    }
+  ],
+  "transferMatrix": [
+    {
+      "fromWarehouseId": "trujillo",
+      "toWarehouseId": "paijan",
+      "businessDays": 1
+    },
+    {
+      "fromWarehouseId": "trujillo",
+      "toWarehouseId": "chiclayo",
+      "businessDays": 1
+    },
+    {
+      "fromWarehouseId": "trujillo",
+      "toWarehouseId": "piura",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "trujillo",
+      "toWarehouseId": "cajamarca",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "paijan",
+      "toWarehouseId": "trujillo",
+      "businessDays": 1
+    },
+    {
+      "fromWarehouseId": "paijan",
+      "toWarehouseId": "chiclayo",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "paijan",
+      "toWarehouseId": "piura",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "paijan",
+      "toWarehouseId": "cajamarca",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "chiclayo",
+      "toWarehouseId": "trujillo",
+      "businessDays": 1
+    },
+    {
+      "fromWarehouseId": "chiclayo",
+      "toWarehouseId": "paijan",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "chiclayo",
+      "toWarehouseId": "piura",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "chiclayo",
+      "toWarehouseId": "cajamarca",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "piura",
+      "toWarehouseId": "trujillo",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "piura",
+      "toWarehouseId": "paijan",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "piura",
+      "toWarehouseId": "chiclayo",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "piura",
+      "toWarehouseId": "cajamarca",
+      "businessDays": 4
+    },
+    {
+      "fromWarehouseId": "cajamarca",
+      "toWarehouseId": "trujillo",
+      "businessDays": 2
+    },
+    {
+      "fromWarehouseId": "cajamarca",
+      "toWarehouseId": "paijan",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "cajamarca",
+      "toWarehouseId": "chiclayo",
+      "businessDays": 3
+    },
+    {
+      "fromWarehouseId": "cajamarca",
+      "toWarehouseId": "piura",
+      "businessDays": 4
+    }
+  ]
+}
