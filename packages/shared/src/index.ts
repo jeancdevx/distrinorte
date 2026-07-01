@@ -1,4 +1,9 @@
 export {
+  COGNITO_CUSTOMER_ID_CLAIM,
+  CustomerAuthError,
+  extractCustomerIdFromAuthorization
+} from './auth/cognito-customer-id.js'
+export {
   STOCK_CACHE_RECONCILE_INTERVAL_ENV,
   STOCK_CACHE_TTL_ENV,
   buildStockCacheKey,
