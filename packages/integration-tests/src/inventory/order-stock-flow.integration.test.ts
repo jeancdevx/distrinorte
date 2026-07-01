@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { OrderStatus } from '@distrinorte/database'
+import { OrderStatus } from '@distrinorte/database/orders'
 
 import { PrismaService } from '../../../../apps/inventory-service/src/database/prisma.service.js'
 import { InventoryService } from '../../../../apps/inventory-service/src/inventory/inventory.service.js'
@@ -9,31 +9,38 @@ import { RedisService } from '../../../../apps/inventory-service/src/redis/redis
 import { PrismaService as OrdersPrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
 import {
+  DirectCustomersClient,
   FakeEventBridgePublisher,
   createInMemoryRedis
 } from '../setup/fakes.js'
 import {
   disconnectTestPrisma,
-  getTestPrisma,
+  getTestPrismaClients,
   resetDatabase
 } from '../setup/test-database.js'
 
 describe('Order stock flow (integration)', () => {
-  const prisma = getTestPrisma()
+  const {
+    customers,
+    orders,
+    inventory: inventoryPrisma
+  } = getTestPrismaClients()
   const ordersEventBridge = new FakeEventBridgePublisher()
   const inventoryEventBridge = new FakeEventBridgePublisher()
   const redis = createInMemoryRedis()
+  const customersClient = new DirectCustomersClient(customers)
 
   const ordersService = new OrdersService(
-    { db: prisma } as OrdersPrismaService,
-    ordersEventBridge as never
+    { db: orders } as OrdersPrismaService,
+    ordersEventBridge as never,
+    customersClient as never
   )
   const inventoryService = new InventoryService(
-    { db: prisma } as PrismaService,
+    { db: inventoryPrisma } as PrismaService,
     { client: redis.client } as RedisService
   )
   const stockReservationService = new StockReservationService(
-    { db: prisma } as PrismaService,
+    { db: inventoryPrisma } as PrismaService,
     inventoryService,
     inventoryEventBridge as never
   )
@@ -41,13 +48,13 @@ describe('Order stock flow (integration)', () => {
   let customerId: string
 
   beforeEach(async () => {
-    await resetDatabase(prisma)
+    await resetDatabase()
     redis.clear()
     ordersEventBridge.orderCreated.length = 0
     inventoryEventBridge.stockReserved.length = 0
     inventoryEventBridge.stockRejected.length = 0
 
-    const customer = await prisma.customer.create({
+    const customer = await customers.customer.create({
       data: {
         name: 'Cliente Flujo',
         taxId: '20888777666',
@@ -61,7 +68,7 @@ describe('Order stock flow (integration)', () => {
 
     customerId = customer.id
 
-    await prisma.inventory.create({
+    await inventoryPrisma.inventory.create({
       data: {
         sku: 'SKU-FLOW-1',
         warehouseId: 'wh-norte',
@@ -90,7 +97,7 @@ describe('Order stock flow (integration)', () => {
 
     await stockReservationService.handleOrderCreated(publishedEvent!)
 
-    const inventory = await prisma.inventory.findUnique({
+    const inventory = await inventoryPrisma.inventory.findUnique({
       where: {
         sku_warehouseId: {
           sku: 'SKU-FLOW-1',
@@ -98,7 +105,7 @@ describe('Order stock flow (integration)', () => {
         }
       }
     })
-    const reservations = await prisma.reservation.findMany({
+    const reservations = await inventoryPrisma.reservation.findMany({
       where: { orderId: order.orderId }
     })
 
@@ -128,7 +135,7 @@ describe('Order stock flow (integration)', () => {
 
     await stockReservationService.handleOrderCreated(publishedEvent!)
 
-    const inventory = await prisma.inventory.findUnique({
+    const inventory = await inventoryPrisma.inventory.findUnique({
       where: {
         sku_warehouseId: {
           sku: 'SKU-FLOW-1',
@@ -136,7 +143,7 @@ describe('Order stock flow (integration)', () => {
         }
       }
     })
-    const reservations = await prisma.reservation.count({
+    const reservations = await inventoryPrisma.reservation.count({
       where: { orderId: order.orderId }
     })
 
