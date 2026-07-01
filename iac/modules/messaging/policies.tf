@@ -53,3 +53,25 @@ resource "aws_sqs_queue_policy" "orders_events" {
     ]
   })
 }
+
+resource "aws_sqs_queue_policy" "projections_work" {
+  queue_url = aws_sqs_queue.projections_work.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowEventBridgeProjectionEvents"
+        Effect    = "Allow"
+        Principal = { Service = "events.amazonaws.com" }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.projections_work.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_cloudwatch_event_rule.projection_events.arn
+          }
+        }
+      },
+    ]
+  })
+}
