@@ -313,9 +313,9 @@ variable "route53_assets_record_name" {
 }
 
 variable "container_image_tag" {
-  description = "Tag por defecto de imagenes ECR cuando no hay override por servicio"
+  description = "Tag por defecto de imagenes ECR cuando no hay override por servicio (usar git SHA, no latest)"
   type        = string
-  default     = "latest"
+  default     = "bootstrap"
 }
 
 variable "container_image_tags" {
