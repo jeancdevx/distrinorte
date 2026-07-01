@@ -2,13 +2,15 @@
   "name": "@distrinorte/config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "files": [
     "tsconfig.base.json",
     "tsconfig.nest.json",
     "tsconfig.paths.json",
     "tsconfig.rolldown.json",
     "prettier.json",
-    "oxlint.json"
+    "oxlint.json",
+    "vitest.base.ts"
   ],
   "exports": {
     "./*": "./*"
