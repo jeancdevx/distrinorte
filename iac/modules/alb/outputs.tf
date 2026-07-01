@@ -42,3 +42,13 @@ output "target_group_arns" {
   description = "Mapa de target group ARNs por servicio"
   value       = { for k, tg in aws_lb_target_group.service : k => tg.arn }
 }
+
+output "lb_arn_suffix" {
+  description = "Sufijo ARN del ALB para metricas CloudWatch"
+  value       = aws_lb.main.arn_suffix
+}
+
+output "target_group_arn_suffixes" {
+  description = "Mapa de sufijos ARN de target groups por servicio"
+  value       = { for k, tg in aws_lb_target_group.service : k => tg.arn_suffix }
+}
