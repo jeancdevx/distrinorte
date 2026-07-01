@@ -1,7 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
-  Injectable
+  Injectable,
+  NotFoundException
 } from '@nestjs/common'
 
 import {
@@ -80,6 +81,27 @@ export class CustomersService {
       }
 
       throw error
+    }
+  }
+
+  async getById(customerId: string): Promise<CustomerListItem> {
+    const customer = await this.prisma.db.customer.findUnique({
+      where: { id: customerId },
+      select: {
+        id: true,
+        name: true,
+        taxId: true,
+        createdAt: true
+      }
+    })
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found')
+    }
+
+    return {
+      ...customer,
+      createdAt: customer.createdAt.toISOString()
     }
   }
 
