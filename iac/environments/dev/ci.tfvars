@@ -41,6 +41,7 @@ redis_snapshot_retention_limit   = 7
 waf_enable_geo_restriction = false
 waf_allowed_country_codes  = ["PE"]
 waf_enable_bot_control     = false
+waf_block_anonymous_ips    = false
 waf_cloudfront_rate_limit  = 2000
 waf_api_gateway_rate_limit = 1000
 
