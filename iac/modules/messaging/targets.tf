@@ -18,3 +18,10 @@ resource "aws_cloudwatch_event_target" "stock_rejected_orders_events" {
   target_id      = "orders-events"
   arn            = aws_sqs_queue.orders_events.arn
 }
+
+resource "aws_cloudwatch_event_target" "projection_events_projections_work" {
+  rule           = aws_cloudwatch_event_rule.projection_events.name
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  target_id      = "projections-work"
+  arn            = aws_sqs_queue.projections_work.arn
+}
