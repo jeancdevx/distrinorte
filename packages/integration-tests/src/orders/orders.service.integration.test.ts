@@ -1,31 +1,36 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { OrderStatus } from '@distrinorte/database'
+import { OrderStatus } from '@distrinorte/database/orders'
 
 import { PrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
-import { FakeEventBridgePublisher } from '../setup/fakes.js'
+import {
+  DirectCustomersClient,
+  FakeEventBridgePublisher
+} from '../setup/fakes.js'
 import {
   disconnectTestPrisma,
-  getTestPrisma,
+  getTestPrismaClients,
   resetDatabase
 } from '../setup/test-database.js'
 
 describe('OrdersService (integration)', () => {
-  const prisma = getTestPrisma()
+  const { customers, orders: prisma } = getTestPrismaClients()
   const eventBridge = new FakeEventBridgePublisher()
+  const customersClient = new DirectCustomersClient(customers)
   const service = new OrdersService(
     { db: prisma } as PrismaService,
-    eventBridge as never
+    eventBridge as never,
+    customersClient as never
   )
 
   let customerId: string
 
   beforeEach(async () => {
-    await resetDatabase(prisma)
+    await resetDatabase()
     eventBridge.orderCreated.length = 0
 
-    const customer = await prisma.customer.create({
+    const customer = await customers.customer.create({
       data: {
         name: 'Cliente Integración',
         taxId: '20999000111',
