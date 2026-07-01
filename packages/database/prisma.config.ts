@@ -3,12 +3,12 @@ import { defineConfig } from 'prisma/config'
 import { resolveDatabaseUrl } from './src/database-url.js'
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  schema: 'prisma/customers/schema.prisma',
   migrations: {
-    path: 'prisma/migrations',
-    seed: 'tsx prisma/seed.ts'
+    path: 'prisma/customers/migrations',
+    seed: 'tsx prisma/seed/index.ts'
   },
   datasource: {
-    url: resolveDatabaseUrl()
+    url: resolveDatabaseUrl('customers')
   }
 })

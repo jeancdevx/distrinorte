@@ -8,14 +8,38 @@
       "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./customers": {
+      "types": "./src/customers.ts",
+      "import": "./dist/customers.js",
+      "default": "./dist/customers.js"
+    },
+    "./orders": {
+      "types": "./src/orders.ts",
+      "import": "./dist/orders.js",
+      "default": "./dist/orders.js"
+    },
+    "./inventory": {
+      "types": "./src/inventory.ts",
+      "import": "./dist/inventory.js",
+      "default": "./dist/inventory.js"
     }
   },
   "scripts": {
-    "build": "prisma generate && rolldown -c rolldown.config.ts",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:seed": "prisma db seed",
-    "lint": "oxlint src prisma prisma.config.ts",
+    "build": "pnpm db:generate && rolldown -c rolldown.config.ts",
+    "db:generate": "prisma generate --schema prisma/customers/schema.prisma --config prisma/customers/prisma.config.ts && prisma generate --schema prisma/orders/schema.prisma --config prisma/orders/prisma.config.ts && prisma generate --schema prisma/inventory/schema.prisma --config prisma/inventory/prisma.config.ts",
+    "db:ensure-databases": "tsx scripts/ensure-service-databases.ts",
+    "db:migrate:deploy": "pnpm db:migrate:deploy:customers && pnpm db:migrate:deploy:orders && pnpm db:migrate:deploy:inventory",
+    "db:migrate:deploy:customers": "prisma migrate deploy --schema prisma/customers/schema.prisma --config prisma/customers/prisma.config.ts",
+    "db:migrate:deploy:orders": "prisma migrate deploy --schema prisma/orders/schema.prisma --config prisma/orders/prisma.config.ts",
+    "db:migrate:deploy:inventory": "prisma migrate deploy --schema prisma/inventory/schema.prisma --config prisma/inventory/prisma.config.ts",
+    "db:migrate:dev": "pnpm db:migrate:dev:customers && pnpm db:migrate:dev:orders && pnpm db:migrate:dev:inventory",
+    "db:migrate:dev:customers": "prisma migrate dev --schema prisma/customers/schema.prisma --config prisma/customers/prisma.config.ts",
+    "db:migrate:dev:orders": "prisma migrate dev --schema prisma/orders/schema.prisma --config prisma/orders/prisma.config.ts",
+    "db:migrate:dev:inventory": "prisma migrate dev --schema prisma/inventory/schema.prisma --config prisma/inventory/prisma.config.ts",
+    "db:seed": "tsx prisma/seed/index.ts",
+    "db:migrate:legacy-split": "tsx scripts/migrate-legacy-split.ts",
+    "lint": "oxlint src prisma prisma.config.ts scripts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -31,8 +55,5 @@
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
     "pg": "8.21.0"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
