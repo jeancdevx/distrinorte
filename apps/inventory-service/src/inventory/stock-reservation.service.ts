@@ -76,15 +76,20 @@ export class StockReservationService {
           })
         }
 
-        await tx.inventory.update({
-          where: {
-            sku_warehouseId: {
-              sku: line.sku,
-              warehouseId: plan.destinationWarehouseId
-            }
-          },
-          data: { quantity: { decrement: line.requiredBase } }
-        })
+        // Solo descontar stock local disponible. El déficit viene de transferencias
+        // (ya debitadas en orígenes arriba). Si se usara requiredBase aquí, el
+        // destino queda negativo (ej. 140 − 180 = −40).
+        if (line.localBase > 0) {
+          await tx.inventory.update({
+            where: {
+              sku_warehouseId: {
+                sku: line.sku,
+                warehouseId: plan.destinationWarehouseId
+              }
+            },
+            data: { quantity: { decrement: line.localBase } }
+          })
+        }
 
         await tx.reservation.create({
           data: {
