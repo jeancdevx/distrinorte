@@ -1,0 +1,287 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment y sufijo AWS (dev, prod)
+        required: true
+        type: string
+      force_all:
+        description: Redesplegar todos los servicios aunque no tengan cambios
+        required: false
+        type: boolean
+        default: false
+      run_smoke:
+        description: Ejecutar smoke HTTP post-deploy
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  AWS_REGION: us-east-2
+  PROJECT_NAME: distrinorte
+  ALL_ECS_SERVICES: '["customers-service","inventory-service","orders-service","catalog-service"]'
+
+jobs:
+  changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      services: ${{ steps.services.outputs.list }}
+      seed-runner: ${{ steps.filter.outputs.seed-runner }}
+      any-ecs: ${{ steps.services.outputs.any-ecs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Filter service paths
+        id: filter
+        if: ${{ !inputs.force_all }}
+        uses: dorny/paths-filter@v4
+        with:
+          filters: .github/filters/services.yml
+
+      - name: Build service matrix
+        id: services
+        env:
+          FORCE_ALL: ${{ inputs.force_all }}
+          CHANGES: ${{ steps.filter.outputs.changes || '[]' }}
+        run: |
+          if [ "$FORCE_ALL" = "true" ]; then
+            list=$ALL_ECS_SERVICES
+          else
+            list=$(echo "$CHANGES" | jq -c '[.[] | select(. == ("customers-service", "inventory-service", "orders-service", "catalog-service"))]')
+          fi
+          any_ecs=false
+          if [ "$(echo "$list" | jq 'length')" -gt 0 ]; then
+            any_ecs=true
+          fi
+          echo "list=$(echo "$list" | jq -c .)" >> "$GITHUB_OUTPUT"
+          echo "any-ecs=$any_ecs" >> "$GITHUB_OUTPUT"
+          echo "Services to deploy: $list"
+
+  build:
+    name: Build & push (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.any-ecs == 'true'
+    environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    env:
+      NAME_PREFIX: distrinorte-${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.service
+          build-args: SERVICE=${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.NAME_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.NAME_PREFIX }}-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+  sync-task-definitions:
+    name: Sync ECS task definitions (Terraform)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [changes, build]
+    if: needs.changes.outputs.any-ecs == 'true'
+    environment: ${{ inputs.environment }}
+    env:
+      NAME_PREFIX: distrinorte-${{ inputs.environment }}
+      TF_IN_AUTOMATION: true
+      TF_VAR_environment: ${{ inputs.environment }}
+      TF_VAR_project_name: distrinorte
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve image tags
+        id: image-tags
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          ECS_CLUSTER: ${{ env.NAME_PREFIX }}-cluster
+          ECS_NAME_PREFIX: ${{ env.NAME_PREFIX }}
+          ECR_REPOSITORY_PREFIX: ${{ env.NAME_PREFIX }}
+        run: |
+          set -euo pipefail
+          CHANGED_FLAGS=()
+          for service in customers-service inventory-service orders-service catalog-service; do
+            if echo '${{ needs.changes.outputs.services }}' | jq -e --arg s "$service" 'index($s) != null' >/dev/null; then
+              CHANGED_FLAGS+=("${service}:true")
+            else
+              CHANGED_FLAGS+=("${service}:false")
+            fi
+          done
+          if [ "${{ needs.changes.outputs.seed-runner }}" = "true" ] || [ "${{ inputs.force_all }}" = "true" ]; then
+            CHANGED_FLAGS+=("seed-runner:true")
+          else
+            CHANGED_FLAGS+=("seed-runner:false")
+          fi
+          TAGS_JSON="$(bash scripts/ci/resolve-image-tags.sh "${IMAGE_TAG}" "${CHANGED_FLAGS[@]}")"
+          echo "tags=${TAGS_JSON}" >> "$GITHUB_OUTPUT"
+          echo "Resolved: ${TAGS_JSON}"
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.11.4
+
+      - name: Terraform apply (image tags)
+        working-directory: iac/environments/dev
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_db_password }}
+          TF_VAR_redis_auth_token: ${{ secrets.TF_VAR_redis_auth_token }}
+          TF_VAR_origin_verify_secret:
+            ${{ secrets.TF_VAR_origin_verify_secret }}
+          TF_VAR_container_image_tag: ${{ github.sha }}
+          TF_VAR_container_image_tags: ${{ steps.image-tags.outputs.tags }}
+          TF_VAR_terraform_state_bucket: ${{ vars.TF_STATE_BUCKET }}
+        run: |
+          terraform init -input=false \
+            -backend-config=backend.ci.hcl \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          terraform apply -var-file=ci.tfvars -auto-approve -input=false
+
+  rollout:
+    name: Rollout (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [changes, sync-task-definitions]
+    if: needs.changes.outputs.any-ecs == 'true'
+    environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    env:
+      NAME_PREFIX: distrinorte-${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new ECS deployment
+        run: |
+          aws ecs update-service \
+            --cluster "${NAME_PREFIX}-cluster" \
+            --service "${NAME_PREFIX}-${{ matrix.service }}" \
+            --force-new-deployment \
+            --no-cli-pager
+
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${NAME_PREFIX}-cluster" \
+            --services "${NAME_PREFIX}-${{ matrix.service }}"
+          echo "${NAME_PREFIX}-${{ matrix.service }} estable (${GITHUB_SHA})"
+
+  smoke:
+    name: Smoke check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes, rollout]
+    if: |
+      inputs.run_smoke &&
+      needs.changes.outputs.any-ecs == 'true'
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.11.4
+
+      - name: Mint smoke access token
+        id: smoke-auth
+        working-directory: iac/environments/dev
+        env:
+          SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
+          SMOKE_ACCESS_TOKEN: ${{ secrets.SMOKE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SMOKE_DEMO_PASSWORD:-}" ]; then
+            terraform init -input=false \
+              -backend-config=backend.ci.hcl \
+              -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+            TOKEN="$(bash ../../../scripts/ci/mint-smoke-token.sh)"
+          elif [ -n "${SMOKE_ACCESS_TOKEN:-}" ]; then
+            TOKEN="$(printf '%s' "${SMOKE_ACCESS_TOKEN}" | tr -d '\n\r')"
+          else
+            TOKEN=""
+          fi
+          {
+            echo "token<<EOF"
+            printf '%s' "${TOKEN}"
+            echo
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve smoke API URL
+        id: smoke-url
+        working-directory: iac/environments/dev
+        run: |
+          set -euo pipefail
+          terraform init -input=false \
+            -backend-config=backend.ci.hcl \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          API_DOMAIN="$(terraform output -raw cloudfront_api_domain_name)"
+          echo "base_url=https://${API_DOMAIN}" >> "${GITHUB_OUTPUT}"
+
+      - name: Configure deploy credentials for smoke HTTP
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Smoke check
+        env:
+          ECS_CLUSTER: distrinorte-${{ inputs.environment }}-cluster
+          ECS_NAME_PREFIX: distrinorte-${{ inputs.environment }}
+          SMOKE_BASE_URL: ${{ steps.smoke-url.outputs.base_url }}
+          SMOKE_ACCESS_TOKEN: ${{ steps.smoke-auth.outputs.token }}
+        run: bash scripts/ci/smoke-dev.sh

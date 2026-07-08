@@ -45,24 +45,28 @@ waf_block_anonymous_ips    = false
 waf_cloudfront_rate_limit  = 2000
 waf_api_gateway_rate_limit = 1000
 
-route53_domain_name = "galaxymorph.com"
+# Edge — sin dominio custom
+enable_custom_domain = false
 
-route53_portal_record_name = "pedidos.galaxymorph.com"
-route53_api_record_name    = "api.pedidos.galaxymorph.com"
-route53_assets_record_name = "assets.galaxymorph.com"
+# Route53 + dominio custom
+# route53_domain_name = "galaxymorph.com"
+#
+# route53_portal_record_name = "pedidos.galaxymorph.com"
+# route53_api_record_name    = "api.pedidos.galaxymorph.com"
+# route53_assets_record_name = "assets.galaxymorph.com"
+#
+# cloudfront_portal_aliases = ["pedidos.galaxymorph.com"]
+# cloudfront_api_aliases    = ["api.pedidos.galaxymorph.com"]
+# cloudfront_assets_aliases = ["assets.galaxymorph.com"]
+#
+# cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
+# cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
 
-cloudfront_portal_aliases = ["pedidos.galaxymorph.com"]
-cloudfront_api_aliases    = ["api.pedidos.galaxymorph.com"]
-cloudfront_assets_aliases = ["assets.galaxymorph.com"]
-
-cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
-cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
-
-enable_github_actions_oidc       = true
-github_repository                = "jeancdevx/distrinorte"
-github_oidc_branches             = ["develop", "production"]
-github_oidc_environments         = ["dev"]
-github_actions_attach_power_user = true
+enable_github_ci             = true
+github_repository            = "jeancdevx/distrinorte"
+github_environment           = "dev"
+github_create_oidc_provider  = true
+github_terraform_grant_admin = true
 
 observability_alarm_email = "jcode2006@gmail.com"
 

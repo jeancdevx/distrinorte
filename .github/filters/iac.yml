@@ -1,0 +1,14 @@
+dev:
+  - 'iac/environments/dev/**'
+  - 'iac/modules/**'
+  - 'iac/bootstrap/**'
+
+staging:
+  - 'iac/environments/staging/**'
+  - 'iac/modules/**'
+  - 'iac/bootstrap/**'
+
+prod:
+  - 'iac/environments/prod/**'
+  - 'iac/modules/**'
+  - 'iac/bootstrap/**'

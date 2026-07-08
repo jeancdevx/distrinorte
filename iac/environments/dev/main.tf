@@ -122,10 +122,7 @@ module "iam" {
   invoices_bucket_arn            = module.s3.invoices_bucket_arn
   invoices_table_arn             = module.dynamodb.invoices_table_arn
   billing_work_queue_arn         = module.messaging.billing_work_queue_arn
-
 }
-
-
 
 module "invoice_worker" {
   source = "../../modules/lambda"
@@ -142,6 +139,34 @@ module "invoice_worker" {
   invoices_customer_gsi_name = module.dynamodb.invoices_customer_gsi_name
   source_zip_path            = local.invoice_worker_zip_path
 }
+
+module "github_oidc" {
+  count  = var.enable_github_ci ? 1 : 0
+  source = "../../modules/github-oidc"
+
+  project_name         = local.project_name
+  environment          = local.environment
+  github_repository    = var.github_repository
+  github_environment   = var.github_environment
+  create_oidc_provider = var.github_create_oidc_provider
+  tags                 = local.common_tags
+}
+
+module "github_terraform" {
+  count  = var.enable_github_ci ? 1 : 0
+  source = "../../modules/github-terraform"
+
+  project_name               = local.project_name
+  environment                = local.environment
+  github_repository          = var.github_repository
+  github_environment         = var.github_environment
+  create_oidc_provider       = false
+  state_bucket_name          = var.terraform_state_bucket
+  state_key_prefix           = "env/${local.environment}/"
+  grant_administrator_access = var.github_terraform_grant_admin
+  tags                       = local.common_tags
+}
+
 
 module "ecs_cluster" {
   source = "../../modules/ecs-cluster"

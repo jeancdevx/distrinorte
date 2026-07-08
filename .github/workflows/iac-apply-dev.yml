@@ -1,0 +1,41 @@
+name: Terraform apply dev
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'iac/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  changes:
+    name: Detect IaC changes (dev)
+    runs-on: ubuntu-latest
+    outputs:
+      dev: ${{ steps.filter.outputs.dev }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: .github/filters/iac.yml
+
+  apply:
+    needs: changes
+    if:
+      needs.changes.outputs.dev == 'true' || github.event_name ==
+      'workflow_dispatch'
+    uses: ./.github/workflows/iac-apply.yml
+    with:
+      environment: dev
+      terraform_directory: iac/environments/dev
+      var_file: ci.tfvars
+      state_key: env/dev/terraform.tfstate
+    secrets: inherit
