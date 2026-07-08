@@ -7,7 +7,7 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_route53_zone" "main" {
-  count = var.route53_domain_name != null ? 1 : 0
+  count = var.enable_custom_domain && var.route53_domain_name != null ? 1 : 0
 
   name         = var.route53_domain_name
   private_zone = false

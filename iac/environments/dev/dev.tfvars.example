@@ -59,29 +59,32 @@ waf_block_anonymous_ips    = false
 waf_cloudfront_rate_limit  = 2000
 waf_api_gateway_rate_limit = 1000
 
-# Route53 + CloudFront custom domains (galaxymorph.com — zona existente en AWS)
-route53_domain_name = "galaxymorph.com"
+# Route53 — desactivado por defecto (CloudFront *.cloudfront.net).
+# Para reactivar galaxymorph.com: enable_custom_domain = true y descomentar bloque.
+enable_custom_domain = false
 
-route53_portal_record_name = "pedidos.galaxymorph.com"
-route53_api_record_name    = "api.pedidos.galaxymorph.com"
-route53_assets_record_name = "assets.galaxymorph.com"
-
-cloudfront_portal_aliases = ["pedidos.galaxymorph.com"]
-cloudfront_api_aliases    = ["api.pedidos.galaxymorph.com"]
-cloudfront_assets_aliases = ["assets.galaxymorph.com"]
-
-# Cognito OAuth — actualizar cuando el portal SPA este desplegado
-cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
-cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
+# --- Dominio custom (comentado — referencia para reactivación) ---
+# route53_domain_name = "galaxymorph.com"
+#
+# route53_portal_record_name = "pedidos.galaxymorph.com"
+# route53_api_record_name    = "api.pedidos.galaxymorph.com"
+# route53_assets_record_name = "assets.galaxymorph.com"
+#
+# cloudfront_portal_aliases = ["pedidos.galaxymorph.com"]
+# cloudfront_api_aliases    = ["api.pedidos.galaxymorph.com"]
+# cloudfront_assets_aliases = ["assets.galaxymorph.com"]
+#
+# cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
+# cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
 
 # ECR / CI-CD — el pipeline usa TF_VAR_container_image_tag=<git-sha>; no usar "latest" en ECS.
 # container_image_tag = "REPLACE_AFTER_FIRST_CI_DEPLOY"
 
-enable_github_actions_oidc     = true
-github_repository              = "jeancdevx/distrinorte"
-github_oidc_branches             = ["develop", "production"]
-github_oidc_environments         = ["dev"]
-github_actions_attach_power_user = true
+enable_github_ci             = true
+github_repository            = "jeancdevx/distrinorte"
+github_environment           = "dev"
+github_create_oidc_provider  = true
+github_terraform_grant_admin = true
 
 # Solo local (mismo valor que backend.hcl / secret TF_STATE_BUCKET en GitHub)
 # terraform_state_bucket = "tu-bucket-tfstate"

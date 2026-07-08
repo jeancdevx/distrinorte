@@ -120,14 +120,35 @@ module "iam" {
   catalog_availability_table_arn = module.dynamodb.catalog_availability_table_arn
   catalog_images_bucket_arn      = module.s3.catalog_images_bucket_arn
 
-  ecr_repository_arns              = values(module.ecr.repository_arns)
-  enable_github_actions_oidc       = var.enable_github_actions_oidc
-  github_repository                = var.github_repository
-  github_oidc_branches             = var.github_oidc_branches
-  github_oidc_environments         = var.github_oidc_environments
-  github_actions_attach_power_user = var.github_actions_attach_power_user
-  terraform_state_bucket           = var.terraform_state_bucket
 }
+
+module "github_oidc" {
+  count  = var.enable_github_ci ? 1 : 0
+  source = "../../modules/github-oidc"
+
+  project_name         = local.project_name
+  environment          = local.environment
+  github_repository    = var.github_repository
+  github_environment   = var.github_environment
+  create_oidc_provider = var.github_create_oidc_provider
+  tags                 = local.common_tags
+}
+
+module "github_terraform" {
+  count  = var.enable_github_ci ? 1 : 0
+  source = "../../modules/github-terraform"
+
+  project_name               = local.project_name
+  environment                = local.environment
+  github_repository          = var.github_repository
+  github_environment         = var.github_environment
+  create_oidc_provider       = false
+  state_bucket_name          = var.terraform_state_bucket
+  state_key_prefix           = "env/${local.environment}/"
+  grant_administrator_access = var.github_terraform_grant_admin
+  tags                       = local.common_tags
+}
+
 
 module "ecs_cluster" {
   source = "../../modules/ecs-cluster"
@@ -330,7 +351,9 @@ module "seed_runner_task" {
   cpu    = 512
   memory = 1024
 
-  environment_variables = local.seed_runner_environment
+  environment_variables = merge(local.seed_runner_environment_base, {
+    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
+  })
 }
 
 
@@ -342,8 +365,8 @@ module "cognito" {
   tags         = local.common_tags
   aws_region   = var.aws_region
 
-  callback_urls = var.cognito_callback_urls
-  logout_urls   = var.cognito_logout_urls
+  callback_urls = local.cognito_callback_urls_effective
+  logout_urls   = local.cognito_logout_urls_effective
 }
 
 module "apigateway" {
@@ -419,9 +442,9 @@ module "cloudfront" {
   origin_verify_secret    = var.origin_verify_secret
   web_acl_id              = module.waf.cloudfront_web_acl_arn
 
-  portal_aliases      = var.cloudfront_portal_aliases
-  api_aliases         = var.cloudfront_api_aliases
-  assets_aliases      = var.cloudfront_assets_aliases
+  portal_aliases      = local.cloudfront_portal_aliases_effective
+  api_aliases         = local.cloudfront_api_aliases_effective
+  assets_aliases      = local.cloudfront_assets_aliases_effective
   acm_certificate_arn = local.cloudfront_certificate_arn
 
   depends_on = [module.route53_acm]
@@ -449,6 +472,13 @@ module "route53_aliases" {
   providers = {
     aws.us_east_1 = aws.us_east_1
   }
+}
+
+# URLs públicas — CloudFront default (*.cloudfront.net) o custom domain (Route53)
+locals {
+  catalog_assets_base_url = local.edge_dns_enabled ? "https://${var.route53_assets_record_name}" : "https://${module.cloudfront.assets_distribution_domain_name}"
+  api_public_base_url     = local.edge_dns_enabled ? "https://${var.route53_api_record_name}" : "https://${module.cloudfront.api_distribution_domain_name}"
+  portal_public_base_url  = local.edge_dns_enabled ? "https://${var.route53_portal_record_name}" : "https://${module.cloudfront.portal_distribution_domain_name}"
 }
 
 
@@ -479,12 +509,14 @@ module "observability" {
   sqs_queue_names = {
     inventory-work   = module.messaging.inventory_work_queue_name
     orders-events    = module.messaging.orders_events_queue_name
+    billing-work     = module.messaging.billing_work_queue_name
     projections-work = module.messaging.projections_work_queue_name
   }
 
   sqs_dlq_names = {
     inventory-work   = module.messaging.inventory_work_dlq_name
     orders-events    = module.messaging.orders_events_dlq_name
+    billing-work     = module.messaging.billing_work_dlq_name
     projections-work = module.messaging.projections_work_dlq_name
   }
 
