@@ -31,7 +31,8 @@ describe('CustomersService (integration)', () => {
     const created = await service.create({
       name: 'Farmacia El Norte',
       taxId: '20111222333',
-      email: 'farmacia@elnorte.demo'
+      email: 'farmacia@elnorte.demo',
+      assignedWarehouseId: 'trujillo'
     })
 
     expect(created).toMatchObject({
@@ -53,12 +54,14 @@ describe('CustomersService (integration)', () => {
     await service.create({
       name: 'Cliente A',
       taxId: '20100000001',
-      email: 'a@demo.test'
+      email: 'a@demo.test',
+      assignedWarehouseId: 'trujillo'
     })
     await service.create({
       name: 'Cliente B',
       taxId: '20100000002',
-      email: 'b@demo.test'
+      email: 'b@demo.test',
+      assignedWarehouseId: 'trujillo'
     })
 
     const page = await service.list(0, 10)
