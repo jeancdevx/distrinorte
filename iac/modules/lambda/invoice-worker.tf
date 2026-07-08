@@ -2,10 +2,7 @@ locals {
   name_prefix   = "${var.project_name}-${var.environment}"
   function_name = "${local.name_prefix}-invoice-worker"
 
-  invoice_worker_zip_path = coalesce(
-    var.source_zip_path,
-    "${path.module}/assets/placeholder.zip",
-  )
+  invoice_worker_zip_path = var.source_zip_path != null ? var.source_zip_path : "${path.module}/assets/placeholder.zip"
 }
 
 resource "aws_cloudwatch_log_group" "invoice_worker" {
@@ -28,6 +25,13 @@ resource "aws_lambda_function" "invoice_worker" {
 
   filename         = local.invoice_worker_zip_path
   source_code_hash = filebase64sha256(local.invoice_worker_zip_path)
+
+  lifecycle {
+    precondition {
+      condition     = var.source_zip_path != null || var.allow_placeholder_zip
+      error_message = "invoice-worker: source_zip_path es null. Genera el zip real (pnpm --filter @distrinorte/invoice-worker package:lambda) y pasa su ruta via source_zip_path, o set allow_placeholder_zip=true si de verdad quieres el placeholder."
+    }
+  }
 
   environment {
     variables = {
