@@ -1,18 +1,30 @@
 import type {
   AvailabilityUpdatedEvent,
+  InvoiceIssuedEvent,
+  OrderConfirmedEvent,
   OrderCreatedEvent,
+  StockPendingTransferEvent,
   StockRejectedEvent,
-  StockReservedEvent
+  StockReservedEvent,
+  StockTransferCompletedEvent
 } from '@distrinorte/events'
 
 export class FakeEventBridgePublisher {
   readonly orderCreated: OrderCreatedEvent[] = []
+  readonly orderConfirmed: OrderConfirmedEvent[] = []
   readonly stockReserved: StockReservedEvent[] = []
   readonly stockRejected: StockRejectedEvent[] = []
+  readonly stockPendingTransfer: StockPendingTransferEvent[] = []
+  readonly stockTransferCompleted: StockTransferCompletedEvent[] = []
+  readonly invoiceIssued: InvoiceIssuedEvent[] = []
   readonly availabilityUpdated: AvailabilityUpdatedEvent[] = []
 
   async publishOrderCreated(detail: OrderCreatedEvent): Promise<void> {
     this.orderCreated.push(detail)
+  }
+
+  async publishOrderConfirmed(detail: OrderConfirmedEvent): Promise<void> {
+    this.orderConfirmed.push(detail)
   }
 
   async publishStockReserved(detail: StockReservedEvent): Promise<void> {
@@ -21,6 +33,18 @@ export class FakeEventBridgePublisher {
 
   async publishStockRejected(detail: StockRejectedEvent): Promise<void> {
     this.stockRejected.push(detail)
+  }
+
+  async publishStockPendingTransfer(
+    detail: StockPendingTransferEvent
+  ): Promise<void> {
+    this.stockPendingTransfer.push(detail)
+  }
+
+  async publishStockTransferCompleted(
+    detail: StockTransferCompletedEvent
+  ): Promise<void> {
+    this.stockTransferCompleted.push(detail)
   }
 
   async publishAvailabilityUpdated(
