@@ -125,6 +125,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/setup
+
+      - name: Package invoice-worker Lambda zip
+        run: pnpm --filter @distrinorte/invoice-worker package:lambda
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
