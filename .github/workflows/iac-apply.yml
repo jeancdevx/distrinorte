@@ -45,13 +45,8 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Build invoice-worker Lambda artifact
-        run: pnpm --filter @distrinorte/invoice-worker build
-
-      - name: Package invoice-worker zip
-        run: |
-          cd packages/invoice-worker/dist
-          zip -q handler.zip index.js
+      - name: Package invoice-worker Lambda zip
+        run: pnpm --filter @distrinorte/invoice-worker package:lambda
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
