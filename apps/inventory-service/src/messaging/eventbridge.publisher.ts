@@ -6,11 +6,15 @@ import { Injectable } from '@nestjs/common'
 
 import {
   buildAvailabilityUpdatedEntry,
+  buildStockPendingTransferEntry,
   buildStockRejectedEntry,
   buildStockReservedEntry,
+  buildStockTransferCompletedEntry,
   type AvailabilityUpdatedEvent,
+  type StockPendingTransferEvent,
   type StockRejectedEvent,
-  type StockReservedEvent
+  type StockReservedEvent,
+  type StockTransferCompletedEvent
 } from '@distrinorte/events'
 
 @Injectable()
@@ -35,6 +39,22 @@ export class EventBridgePublisher {
 
   async publishStockRejected(detail: StockRejectedEvent): Promise<void> {
     await this.publish(buildStockRejectedEntry(detail, this.eventBusName))
+  }
+
+  async publishStockPendingTransfer(
+    detail: StockPendingTransferEvent
+  ): Promise<void> {
+    await this.publish(
+      buildStockPendingTransferEntry(detail, this.eventBusName)
+    )
+  }
+
+  async publishStockTransferCompleted(
+    detail: StockTransferCompletedEvent
+  ): Promise<void> {
+    await this.publish(
+      buildStockTransferCompletedEntry(detail, this.eventBusName)
+    )
   }
 
   async publishAvailabilityUpdated(
