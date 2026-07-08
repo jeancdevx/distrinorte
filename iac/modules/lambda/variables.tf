@@ -51,6 +51,12 @@ variable "source_zip_path" {
   nullable    = true
 }
 
+variable "allow_placeholder_zip" {
+  description = "Permite usar el placeholder.zip cuando source_zip_path es null (solo para bootstrap local)"
+  type        = bool
+  default     = false
+}
+
 variable "handler" {
   description = "Handler del Lambda"
   type        = string
