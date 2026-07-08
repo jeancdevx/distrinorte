@@ -21,7 +21,7 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 ARG SERVICE
 COPY --from=pruner /app/out/full/ .
-RUN pnpm --filter @distrinorte/database db:generate
+RUN pnpm --filter @distrinorte/database build
 RUN pnpm turbo run build --filter=@distrinorte/${SERVICE}
 
 FROM base AS runner

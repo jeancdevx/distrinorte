@@ -1,0 +1,15 @@
+{
+  "extends": "@distrinorte/config/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./generated",
+    "outDir": "./generated",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmitOnError": true,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["generated/**/*.ts"],
+  "exclude": ["**/*.d.ts"]
+}
