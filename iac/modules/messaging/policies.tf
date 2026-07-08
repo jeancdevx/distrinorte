@@ -20,6 +20,28 @@ resource "aws_sqs_queue_policy" "inventory_work" {
   })
 }
 
+resource "aws_sqs_queue_policy" "billing_work" {
+  queue_url = aws_sqs_queue.billing_work.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowEventBridgeOrderConfirmed"
+        Effect    = "Allow"
+        Principal = { Service = "events.amazonaws.com" }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.billing_work.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_cloudwatch_event_rule.order_confirmed.arn
+          }
+        }
+      },
+    ]
+  })
+}
+
 resource "aws_sqs_queue_policy" "orders_events" {
   queue_url = aws_sqs_queue.orders_events.id
 
@@ -47,6 +69,18 @@ resource "aws_sqs_queue_policy" "orders_events" {
         Condition = {
           ArnEquals = {
             "aws:SourceArn" = aws_cloudwatch_event_rule.stock_rejected.arn
+          }
+        }
+      },
+      {
+        Sid       = "AllowEventBridgeOrdersLifecycleEvents"
+        Effect    = "Allow"
+        Principal = { Service = "events.amazonaws.com" }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.orders_events.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_cloudwatch_event_rule.orders_lifecycle_events.arn
           }
         }
       },
