@@ -2,10 +2,18 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException
+  ServiceUnavailableException,
+  UnprocessableEntityException
 } from '@nestjs/common'
 
-import { OrderStatus } from '@distrinorte/database/orders'
+import { OrderStatus, type Prisma } from '@distrinorte/database/orders'
+import { EventDetailType, type OrderCreatedEvent } from '@distrinorte/events'
+import {
+  calculateLineAmounts,
+  calculateOrderTotals,
+  isMinimumOrderMet,
+  parseTaxAffectation
+} from '@distrinorte/shared'
 
 import {
   parseCreateOrderInput,
@@ -13,25 +21,45 @@ import {
 } from './dto/create-order.dto.js'
 
 import { PrismaService } from '../database/prisma.service.js'
-import { EventBridgePublisher } from '../messaging/eventbridge.publisher.js'
+import { OutboxProcessor } from '../outbox/outbox.processor.js'
+
+export type OrderLineRecord = {
+  sku: string
+  quantity: number
+  unitPriceNet: number
+  saleUnit: string
+  unitsPerBaseUnit: number
+  taxAffectation: string
+  lineNet: number
+  lineTax: number
+  lineGross: number
+}
 
 export type OrderRecord = {
   orderId: string
   status: OrderStatus
   customerId: string
   warehouseId: string
-  lines: Array<{ sku: string; quantity: number }>
+  lines: OrderLineRecord[]
+  totalNet: number | null
+  totalTax: number | null
+  totalGross: number | null
+  estimatedDeliveryDate: string | null
   rejectionReason: string | null
   correlationId: string
   createdAt: string
   updatedAt: string
 }
 
+type PricedLine = OrderLineRecord & {
+  quantityBase: number
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBridge: EventBridgePublisher
+    private readonly outboxProcessor: OutboxProcessor
   ) {}
 
   async create(
@@ -58,41 +86,82 @@ export class OrdersService {
       throw new BadRequestException('Invalid order payload')
     }
 
-    await this.assertCustomerSnapshotReady(customerId)
-
-    const order = await this.prisma.db.order.create({
-      data: {
-        customerId,
-        warehouseId: input.warehouseId,
-        status: OrderStatus.PENDING,
-        idempotencyKey,
-        correlationId,
-        lines: {
-          create: input.lines.map(line => ({
-            sku: line.sku,
-            quantity: line.quantity
-          }))
-        }
-      },
-      include: { lines: true }
+    const snapshot = await this.prisma.db.customerSnapshot.findUnique({
+      where: { customerId }
     })
 
-    try {
-      await this.eventBridge.publishOrderCreated({
-        orderId: order.id,
-        customerId: order.customerId,
-        warehouseId: order.warehouseId,
-        lines: order.lines.map(line => ({
-          sku: line.sku,
-          quantity: line.quantity
-        })),
-        correlationId
-      })
-    } catch {
-      throw new ServiceUnavailableException(
-        'Order persisted but event publication failed'
-      )
+    if (!snapshot) {
+      throw new ServiceUnavailableException('CUSTOMER_SYNC_PENDING')
     }
+
+    const pricedLines = await this.priceLines(input.lines)
+    const totals = calculateOrderTotals(
+      pricedLines.map(line => ({
+        quantityBase: line.quantityBase,
+        lineNet: line.lineNet,
+        lineTax: line.lineTax,
+        lineGross: line.lineGross
+      }))
+    )
+
+    if (!isMinimumOrderMet(totals.totalGross)) {
+      throw new UnprocessableEntityException('MIN_ORDER_NOT_MET')
+    }
+
+    const warehouseId = snapshot.assignedWarehouseId
+
+    const order = await this.prisma.db.$transaction(async tx => {
+      const created = await tx.order.create({
+        data: {
+          customerId,
+          warehouseId,
+          status: OrderStatus.PENDING,
+          totalNet: totals.totalNet,
+          totalTax: totals.totalTax,
+          totalGross: totals.totalGross,
+          idempotencyKey,
+          correlationId,
+          lines: {
+            create: pricedLines.map(line => ({
+              sku: line.sku,
+              quantity: line.quantity,
+              unitPriceNet: line.unitPriceNet,
+              saleUnit: line.saleUnit,
+              unitsPerBaseUnit: line.unitsPerBaseUnit,
+              taxAffectation: line.taxAffectation,
+              lineNet: line.lineNet,
+              lineTax: line.lineTax,
+              lineGross: line.lineGross
+            }))
+          }
+        },
+        include: { lines: true }
+      })
+
+      const outboxPayload: OrderCreatedEvent = {
+        orderId: created.id,
+        customerId: created.customerId,
+        warehouseId: created.warehouseId,
+        lines: created.lines.map(line => this.toOrderLineDetail(line)),
+        totalNet: totals.totalNet,
+        totalTax: totals.totalTax,
+        totalGross: totals.totalGross,
+        correlationId
+      }
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'order',
+          aggregateId: created.id,
+          eventType: EventDetailType.OrderCreated,
+          payload: outboxPayload as unknown as Prisma.InputJsonValue
+        }
+      })
+
+      return created
+    })
+
+    await this.outboxProcessor.flush()
 
     return this.toOrderRecord(order)
   }
@@ -141,14 +210,43 @@ export class OrdersService {
     }
   }
 
-  private async assertCustomerSnapshotReady(customerId: string): Promise<void> {
-    const snapshot = await this.prisma.db.customerSnapshot.findUnique({
-      where: { customerId }
-    })
+  private async priceLines(
+    lines: CreateOrderInput['lines']
+  ): Promise<PricedLine[]> {
+    const priced: PricedLine[] = []
 
-    if (!snapshot) {
-      throw new ServiceUnavailableException('CUSTOMER_SYNC_PENDING')
+    for (const line of lines) {
+      const snapshot = await this.prisma.db.priceSnapshot.findUnique({
+        where: { sku: line.sku }
+      })
+
+      if (!snapshot) {
+        throw new ServiceUnavailableException(`PRICE_SYNC_PENDING:${line.sku}`)
+      }
+
+      const taxAffectation = parseTaxAffectation(snapshot.taxAffectation)
+      const amounts = calculateLineAmounts({
+        quantity: line.quantity,
+        unitPriceNet: Number(snapshot.unitPriceNet),
+        unitsPerBaseUnit: snapshot.unitsPerBaseUnit,
+        taxAffectation
+      })
+
+      priced.push({
+        sku: line.sku,
+        quantity: line.quantity,
+        unitPriceNet: Number(snapshot.unitPriceNet),
+        saleUnit: snapshot.saleUnit,
+        unitsPerBaseUnit: snapshot.unitsPerBaseUnit,
+        taxAffectation,
+        lineNet: amounts.lineNet,
+        lineTax: amounts.lineTax,
+        lineGross: amounts.lineGross,
+        quantityBase: amounts.quantityBase
+      })
     }
+
+    return priced
   }
 
   private assertOrderOwnership(
@@ -160,16 +258,54 @@ export class OrdersService {
     }
   }
 
+  private toOrderLineDetail(line: {
+    sku: string
+    quantity: number
+    unitPriceNet: Prisma.Decimal
+    saleUnit: string
+    unitsPerBaseUnit: number
+    taxAffectation: string
+    lineNet: Prisma.Decimal
+    lineTax: Prisma.Decimal
+    lineGross: Prisma.Decimal
+  }) {
+    return {
+      sku: line.sku,
+      quantity: line.quantity,
+      unitPriceNet: Number(line.unitPriceNet),
+      saleUnit: line.saleUnit,
+      unitsPerBaseUnit: line.unitsPerBaseUnit,
+      taxAffectation: line.taxAffectation,
+      lineNet: Number(line.lineNet),
+      lineTax: Number(line.lineTax),
+      lineGross: Number(line.lineGross)
+    }
+  }
+
   private toOrderRecord(order: {
     id: string
     status: OrderStatus
     customerId: string
     warehouseId: string
     rejectionReason: string | null
+    totalNet: Prisma.Decimal | null
+    totalTax: Prisma.Decimal | null
+    totalGross: Prisma.Decimal | null
+    estimatedDeliveryDate: Date | null
     correlationId: string
     createdAt: Date
     updatedAt: Date
-    lines: Array<{ sku: string; quantity: number }>
+    lines: Array<{
+      sku: string
+      quantity: number
+      unitPriceNet: Prisma.Decimal
+      saleUnit: string
+      unitsPerBaseUnit: number
+      taxAffectation: string
+      lineNet: Prisma.Decimal
+      lineTax: Prisma.Decimal
+      lineGross: Prisma.Decimal
+    }>
   }): OrderRecord {
     return {
       orderId: order.id,
@@ -178,8 +314,19 @@ export class OrdersService {
       warehouseId: order.warehouseId,
       lines: order.lines.map(line => ({
         sku: line.sku,
-        quantity: line.quantity
+        quantity: line.quantity,
+        unitPriceNet: Number(line.unitPriceNet),
+        saleUnit: line.saleUnit,
+        unitsPerBaseUnit: line.unitsPerBaseUnit,
+        taxAffectation: line.taxAffectation,
+        lineNet: Number(line.lineNet),
+        lineTax: Number(line.lineTax),
+        lineGross: Number(line.lineGross)
       })),
+      totalNet: order.totalNet === null ? null : Number(order.totalNet),
+      totalTax: order.totalTax === null ? null : Number(order.totalTax),
+      totalGross: order.totalGross === null ? null : Number(order.totalGross),
+      estimatedDeliveryDate: order.estimatedDeliveryDate?.toISOString() ?? null,
       rejectionReason: order.rejectionReason,
       correlationId: order.correlationId,
       createdAt: order.createdAt.toISOString(),
