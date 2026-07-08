@@ -66,6 +66,10 @@ function toDynamoItem(product: DemoProduct): Record<string, unknown> {
     sku: product.sku,
     name: product.name,
     price: product.price,
+    unitPriceNet: product.price,
+    saleUnit: 'UN',
+    unitsPerBaseUnit: 1,
+    taxAffectation: 'GRAVADO',
     category: product.category,
     imageKey: product.imageKey,
     ...(product.active === undefined ? {} : { active: product.active })
