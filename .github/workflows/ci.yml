@@ -150,8 +150,8 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Build Lambda package
-        run: pnpm --filter @distrinorte/invoice-worker build
+      - name: Package Lambda zip
+        run: pnpm --filter @distrinorte/invoice-worker package:lambda
 
   iac:
     name: Terraform fmt · validate
