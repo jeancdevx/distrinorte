@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 
-import { CorrelationIdInterceptor } from '@distrinorte/shared'
+import { CorrelationIdInterceptor, PinoLoggerModule } from '@distrinorte/shared'
 
 import { HealthModule } from './health/health.module.js'
 
@@ -10,7 +10,13 @@ import { InventoryModule } from './inventory/inventory.module.js'
 import { RedisModule } from './redis/redis.module.js'
 
 @Module({
-  imports: [DatabaseModule, RedisModule, HealthModule, InventoryModule],
+  imports: [
+    PinoLoggerModule,
+    DatabaseModule,
+    RedisModule,
+    HealthModule,
+    InventoryModule
+  ],
   providers: [
     {
       provide: APP_INTERCEPTOR,
