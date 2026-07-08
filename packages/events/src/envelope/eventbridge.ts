@@ -6,8 +6,10 @@ import {
 import type {
   OrderConfirmedEvent,
   OrderCreatedEvent,
+  StockPendingTransferEvent,
   StockRejectedEvent,
-  StockReservedEvent
+  StockReservedEvent,
+  StockTransferCompletedEvent
 } from '@/types/domain-events.js'
 import type {
   AvailabilityUpdatedEvent,
@@ -64,6 +66,24 @@ export function buildStockRejectedEntry(
   eventBusName?: string
 ): EventBridgeEntry {
   return buildEntry(EventDetailType.StockRejected, detail, eventBusName)
+}
+
+export function buildStockPendingTransferEntry(
+  detail: StockPendingTransferEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(EventDetailType.StockPendingTransfer, detail, eventBusName)
+}
+
+export function buildStockTransferCompletedEntry(
+  detail: StockTransferCompletedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(
+    EventDetailType.StockTransferCompleted,
+    detail,
+    eventBusName
+  )
 }
 
 export function buildOrderConfirmedEntry(
