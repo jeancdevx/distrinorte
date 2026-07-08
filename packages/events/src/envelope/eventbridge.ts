@@ -25,7 +25,6 @@ export type EventBridgeEntry = {
   DetailType: EventDetailTypeName
   Detail: string
   EventBusName?: string
-  Time?: string
 }
 
 export function serializeEventDetail<TDetail>(detail: TDetail): string {
