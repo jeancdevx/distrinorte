@@ -10,12 +10,17 @@ locals {
     ManagedBy   = "terraform"
   })
 
-  edge_dns_enabled = var.route53_domain_name != null
+  # Route53 + ACM + aliases — requiere enable_custom_domain = true y route53_domain_name
+  edge_dns_enabled = var.enable_custom_domain && var.route53_domain_name != null
+
+  cloudfront_portal_aliases_effective = local.edge_dns_enabled ? var.cloudfront_portal_aliases : []
+  cloudfront_api_aliases_effective    = local.edge_dns_enabled ? var.cloudfront_api_aliases : []
+  cloudfront_assets_aliases_effective = local.edge_dns_enabled ? var.cloudfront_assets_aliases : []
 
   cloudfront_domain_names = distinct(concat(
-    var.cloudfront_portal_aliases,
-    var.cloudfront_api_aliases,
-    var.cloudfront_assets_aliases,
+    local.cloudfront_portal_aliases_effective,
+    local.cloudfront_api_aliases_effective,
+    local.cloudfront_assets_aliases_effective,
   ))
 
   create_acm_certificate = local.edge_dns_enabled && var.cloudfront_acm_certificate_arn == null && length(local.cloudfront_domain_names) > 0
@@ -24,7 +29,8 @@ locals {
     local.create_acm_certificate ? module.route53_acm[0].validated_certificate_arn : null
   )
 
-  catalog_assets_base_url = "https://${var.route53_assets_record_name}"
+  cognito_callback_urls_effective = local.edge_dns_enabled ? var.cognito_callback_urls : ["http://localhost:5173/callback"]
+  cognito_logout_urls_effective   = local.edge_dns_enabled ? var.cognito_logout_urls : ["http://localhost:5173/"]
 
   ecs_service_names = toset([
     "customers-service",
@@ -44,7 +50,9 @@ locals {
     name => "${module.ecr.repository_urls[name]}:${local.ecs_image_tag[name]}"
   }
 
-  seed_runner_environment = {
+  invoice_worker_zip_path = fileexists("${path.module}/../../../packages/invoice-worker/dist/handler.zip") ? abspath("${path.module}/../../../packages/invoice-worker/dist/handler.zip") : null
+
+  seed_runner_environment_base = {
     NODE_ENV                            = var.environment
     AWS_REGION                          = var.aws_region
     EVENT_BUS_NAME                      = module.messaging.event_bus_name
@@ -56,7 +64,6 @@ locals {
     DATABASE_NAME_INVENTORY             = module.rds.service_database_names.inventory
     DATABASE_USER                       = module.rds.username
     DATABASE_PASSWORD                   = var.db_password
-    LEGACY_DATABASE_NAME                = module.rds.db_name
     DYNAMODB_PRODUCTS_TABLE             = module.dynamodb.products_table_name
     DYNAMODB_CATALOG_AVAILABILITY_TABLE = module.dynamodb.catalog_availability_table_name
     REDIS_HOST                          = module.elasticache.primary_endpoint
@@ -64,6 +71,5 @@ locals {
     REDIS_AUTH_TOKEN                    = var.redis_auth_token
     REDIS_TLS                           = tostring(var.redis_transit_encryption_enabled)
     CATALOG_IMAGES_BUCKET               = module.s3.catalog_images_bucket_name
-    CATALOG_ASSETS_BASE_URL             = local.catalog_assets_base_url
   }
 }
