@@ -26,7 +26,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm db:generate && rolldown -c rolldown.config.ts",
+    "build": "pnpm db:generate && tsc -p tsconfig.generated.json && rolldown -c rolldown.config.ts",
     "db:generate": "prisma generate --schema prisma/customers/schema.prisma --config prisma/customers/prisma.config.ts && prisma generate --schema prisma/orders/schema.prisma --config prisma/orders/prisma.config.ts && prisma generate --schema prisma/inventory/schema.prisma --config prisma/inventory/prisma.config.ts",
     "db:ensure-databases": "tsx scripts/ensure-service-databases.ts",
     "db:migrate:deploy": "pnpm db:migrate:deploy:customers && pnpm db:migrate:deploy:orders && pnpm db:migrate:deploy:inventory",
