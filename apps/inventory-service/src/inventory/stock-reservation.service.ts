@@ -76,9 +76,6 @@ export class StockReservationService {
           })
         }
 
-        // Solo descontar stock local disponible. El déficit viene de transferencias
-        // (ya debitadas en orígenes arriba). Si se usara requiredBase aquí, el
-        // destino queda negativo (ej. 140 − 180 = −40).
         if (line.localBase > 0) {
           await tx.inventory.update({
             where: {
