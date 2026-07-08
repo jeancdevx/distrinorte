@@ -71,6 +71,20 @@ export type StockRejectedEvent = {
   correlationId: string
 }
 
+export type StockPendingTransferEvent = {
+  orderId: string
+  destinationWarehouseId: string
+  transferId: string
+  fulfillment: FulfillmentOrigin[]
+  correlationId: string
+}
+
+export type StockTransferCompletedEvent = {
+  orderId: string
+  transferId: string
+  correlationId: string
+}
+
 export type OrderConfirmedLine = OrderLineDetail
 
 export type OrderConfirmedEvent = {
@@ -91,6 +105,8 @@ export type DomainEvent =
   | OrderCreatedEvent
   | StockReservedEvent
   | StockRejectedEvent
+  | StockPendingTransferEvent
+  | StockTransferCompletedEvent
   | OrderConfirmedEvent
   | CustomerRegisteredEvent
   | CustomerUpdatedEvent

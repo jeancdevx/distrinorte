@@ -43,6 +43,25 @@ resource "aws_cloudwatch_event_rule" "stock_rejected" {
   })
 }
 
+
+resource "aws_cloudwatch_event_rule" "orders_lifecycle_events" {
+  name           = "${local.name_prefix}-orders-lifecycle-events-rule"
+  description    = "Route stock/invoice lifecycle events to orders-events"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+
+  event_pattern = jsonencode({
+    source = [var.event_source]
+    detail-type = [
+      "order.stock_pending_transfer",
+      "stock.transfer_completed",
+                ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${local.name_prefix}-orders-lifecycle-events-rule"
+  })
+}
+
 resource "aws_cloudwatch_event_rule" "projection_events" {
   name           = "${local.name_prefix}-projection-events-rule"
   description    = "Route read-model projection events to projections-work"

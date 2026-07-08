@@ -4,10 +4,14 @@ import { OrderStatus, type Prisma } from '@distrinorte/database/orders'
 import {
   EventDetailType,
   parseSqsEventBridgeBody,
+  type StockPendingTransferEvent,
   type StockRejectedEvent,
   type StockReservedEvent
 } from '@distrinorte/events'
-import { calculateEstimatedDeliveryDate } from '@distrinorte/shared'
+import {
+  calculateEstimatedDeliveryDate,
+  type TransferMatrixEntry
+} from '@distrinorte/shared'
 
 import { PrismaService } from '../database/prisma.service.js'
 import { OutboxProcessor } from '../outbox/outbox.processor.js'
@@ -25,6 +29,11 @@ export class OrderEventsHandler {
     const envelope = parseSqsEventBridgeBody(body)
 
     switch (envelope['detail-type']) {
+      case EventDetailType.StockPendingTransfer:
+        await this.markAwaitingTransfer(
+          envelope.detail as StockPendingTransferEvent
+        )
+        return
       case EventDetailType.StockReserved:
         await this.confirmOrder(envelope.detail as StockReservedEvent)
         return
@@ -35,6 +44,26 @@ export class OrderEventsHandler {
         this.logger.warn(
           `Ignoring unsupported event ${envelope['detail-type']}`
         )
+    }
+  }
+
+  private async markAwaitingTransfer(
+    detail: StockPendingTransferEvent
+  ): Promise<void> {
+    const result = await this.prisma.db.order.updateMany({
+      where: {
+        id: detail.orderId,
+        status: OrderStatus.PENDING
+      },
+      data: {
+        status: OrderStatus.AWAITING_TRANSFER
+      }
+    })
+
+    if (result.count === 0) {
+      this.logger.warn(
+        `Order ${detail.orderId} was not pending — skip awaiting transfer`
+      )
     }
   }
 
@@ -49,7 +78,10 @@ export class OrderEventsHandler {
       return
     }
 
-    if (order.status !== OrderStatus.PENDING) {
+    if (
+      order.status !== OrderStatus.PENDING &&
+      order.status !== OrderStatus.AWAITING_TRANSFER
+    ) {
       this.logger.warn(
         `Order ${detail.orderId} is ${order.status} — skip confirm`
       )
@@ -67,11 +99,18 @@ export class OrderEventsHandler {
       return
     }
 
-    const confirmedAt = new Date(detail.confirmedAt ?? new Date().toISOString())
+    const matrix = detail.transferMatrix.map(row => ({
+      fromWarehouseId: row.fromWarehouseId,
+      toWarehouseId: row.toWarehouseId,
+      businessDays: row.businessDays,
+      cutoffHour: row.cutoffHour
+    })) satisfies TransferMatrixEntry[]
+
+    const confirmedAt = new Date(detail.confirmedAt)
     const estimatedDeliveryDate = calculateEstimatedDeliveryDate(
       order.warehouseId,
-      detail.fulfillment ?? [],
-      detail.transferMatrix ?? [],
+      detail.fulfillment,
+      matrix,
       confirmedAt
     )
 
@@ -104,7 +143,7 @@ export class OrderEventsHandler {
         totalTax: Number(order.totalTax ?? 0),
         totalGross: Number(order.totalGross ?? 0),
         estimatedDeliveryDate: estimatedDeliveryDate.toISOString(),
-        fulfillment: detail.fulfillment ?? [],
+        fulfillment: detail.fulfillment,
         correlationId: detail.correlationId
       }
 
@@ -125,7 +164,9 @@ export class OrderEventsHandler {
     const result = await this.prisma.db.order.updateMany({
       where: {
         id: orderId,
-        status: OrderStatus.PENDING
+        status: {
+          in: [OrderStatus.PENDING, OrderStatus.AWAITING_TRANSFER]
+        }
       },
       data: {
         status: OrderStatus.REJECTED,
