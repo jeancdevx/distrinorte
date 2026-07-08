@@ -4,6 +4,7 @@ import {
   type EventDetailTypeName
 } from '@/constants.js'
 import type {
+  OrderConfirmedEvent,
   OrderCreatedEvent,
   StockRejectedEvent,
   StockReservedEvent
@@ -31,88 +32,73 @@ export function parseEventDetail<TDetail>(detail: string): TDetail {
   return JSON.parse(detail) as TDetail
 }
 
-export function buildOrderCreatedEntry(
-  detail: OrderCreatedEvent,
+function buildEntry<TDetail>(
+  detailType: EventDetailTypeName,
+  detail: TDetail,
   eventBusName?: string
 ): EventBridgeEntry {
   return {
     Source: EVENT_SOURCE,
-    DetailType: EventDetailType.OrderCreated,
+    DetailType: detailType,
     Detail: serializeEventDetail(detail),
     ...(eventBusName ? { EventBusName: eventBusName } : {})
   }
+}
+
+export function buildOrderCreatedEntry(
+  detail: OrderCreatedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(EventDetailType.OrderCreated, detail, eventBusName)
 }
 
 export function buildStockReservedEntry(
   detail: StockReservedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.StockReserved,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.StockReserved, detail, eventBusName)
 }
 
 export function buildStockRejectedEntry(
   detail: StockRejectedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.StockRejected,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.StockRejected, detail, eventBusName)
+}
+
+export function buildOrderConfirmedEntry(
+  detail: OrderConfirmedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(EventDetailType.OrderConfirmed, detail, eventBusName)
 }
 
 export function buildCustomerRegisteredEntry(
   detail: CustomerRegisteredEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.CustomerRegistered,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.CustomerRegistered, detail, eventBusName)
 }
 
 export function buildCustomerUpdatedEntry(
   detail: CustomerUpdatedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.CustomerUpdated,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.CustomerUpdated, detail, eventBusName)
 }
 
 export function buildCatalogPriceUpdatedEntry(
   detail: CatalogPriceUpdatedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.CatalogPriceUpdated,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.CatalogPriceUpdated, detail, eventBusName)
 }
 
 export function buildAvailabilityUpdatedEntry(
   detail: AvailabilityUpdatedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
-  return {
-    Source: EVENT_SOURCE,
-    DetailType: EventDetailType.AvailabilityUpdated,
-    Detail: serializeEventDetail(detail),
-    ...(eventBusName ? { EventBusName: eventBusName } : {})
-  }
+  return buildEntry(EventDetailType.AvailabilityUpdated, detail, eventBusName)
 }
 
 export type SqsEventBridgeBody<TDetail> = {

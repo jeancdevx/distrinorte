@@ -5,7 +5,9 @@ import {
 import { Injectable } from '@nestjs/common'
 
 import {
+  buildOrderConfirmedEntry,
   buildOrderCreatedEntry,
+  type OrderConfirmedEvent,
   type OrderCreatedEvent
 } from '@distrinorte/events'
 
@@ -26,23 +28,27 @@ export class EventBridgePublisher {
   }
 
   async publishOrderCreated(detail: OrderCreatedEvent): Promise<void> {
-    const entry = buildOrderCreatedEntry(detail, this.eventBusName)
+    await this.publish(buildOrderCreatedEntry(detail, this.eventBusName))
+  }
 
+  async publishOrderConfirmed(detail: OrderConfirmedEvent): Promise<void> {
+    await this.publish(buildOrderConfirmedEntry(detail, this.eventBusName))
+  }
+
+  private async publish(entry: {
+    Source: string
+    DetailType: string
+    Detail: string
+    EventBusName?: string
+  }): Promise<void> {
     const response = await this.client.send(
       new PutEventsCommand({
-        Entries: [
-          {
-            Source: entry.Source,
-            DetailType: entry.DetailType,
-            Detail: entry.Detail,
-            EventBusName: entry.EventBusName
-          }
-        ]
+        Entries: [entry]
       })
     )
 
     if (response.FailedEntryCount && response.FailedEntryCount > 0) {
-      throw new Error('Failed to publish order.created to EventBridge')
+      throw new Error(`Failed to publish ${entry.DetailType} to EventBridge`)
     }
   }
 }

@@ -4,6 +4,7 @@ export const EventDetailType = {
   OrderCreated: 'order.created',
   StockReserved: 'order.stock_reserved',
   StockRejected: 'order.stock_rejected',
+  OrderConfirmed: 'order.confirmed',
   CustomerRegistered: 'customer.registered',
   CustomerUpdated: 'customer.updated',
   CatalogPriceUpdated: 'catalog.price_updated',

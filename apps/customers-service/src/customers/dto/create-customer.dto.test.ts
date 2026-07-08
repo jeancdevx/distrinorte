@@ -8,13 +8,14 @@ describe('parseCreateCustomerInput', () => {
       parseCreateCustomerInput({
         name: ' El Norte ',
         taxId: ' 20123456789 ',
-        email: ' demo@elnorte.demo '
+        email: ' demo@elnorte.demo ',
+        assignedWarehouseId: ' chiclayo '
       })
     ).toEqual({
       name: 'El Norte',
       taxId: '20123456789',
       email: 'demo@elnorte.demo',
-      assignedWarehouseId: 'trujillo'
+      assignedWarehouseId: 'chiclayo'
     })
   })
 
@@ -23,9 +24,20 @@ describe('parseCreateCustomerInput', () => {
       parseCreateCustomerInput({
         name: 'El Norte',
         taxId: '20123456789',
-        email: 'not-an-email'
+        email: 'not-an-email',
+        assignedWarehouseId: 'trujillo'
       })
     ).toThrow('INVALID_EMAIL')
+  })
+
+  it('requires assignedWarehouseId', () => {
+    expect(() =>
+      parseCreateCustomerInput({
+        name: 'El Norte',
+        taxId: '20123456789',
+        email: 'demo@elnorte.demo'
+      })
+    ).toThrow('INVALID_ASSIGNEDWAREHOUSEID')
   })
 
   it('rejects missing required fields', () => {
