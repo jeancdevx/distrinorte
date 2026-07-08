@@ -4,14 +4,10 @@ import {
   type EventDetailTypeName
 } from '@/constants.js'
 import type {
-  InvoiceFailedEvent,
-  InvoiceIssuedEvent,
   OrderConfirmedEvent,
   OrderCreatedEvent,
-  StockPendingTransferEvent,
   StockRejectedEvent,
-  StockReservedEvent,
-  StockTransferCompletedEvent
+  StockReservedEvent
 } from '@/types/domain-events.js'
 import type {
   AvailabilityUpdatedEvent,
@@ -70,43 +66,11 @@ export function buildStockRejectedEntry(
   return buildEntry(EventDetailType.StockRejected, detail, eventBusName)
 }
 
-export function buildStockPendingTransferEntry(
-  detail: StockPendingTransferEvent,
-  eventBusName?: string
-): EventBridgeEntry {
-  return buildEntry(EventDetailType.StockPendingTransfer, detail, eventBusName)
-}
-
-export function buildStockTransferCompletedEntry(
-  detail: StockTransferCompletedEvent,
-  eventBusName?: string
-): EventBridgeEntry {
-  return buildEntry(
-    EventDetailType.StockTransferCompleted,
-    detail,
-    eventBusName
-  )
-}
-
 export function buildOrderConfirmedEntry(
   detail: OrderConfirmedEvent,
   eventBusName?: string
 ): EventBridgeEntry {
   return buildEntry(EventDetailType.OrderConfirmed, detail, eventBusName)
-}
-
-export function buildInvoiceIssuedEntry(
-  detail: InvoiceIssuedEvent,
-  eventBusName?: string
-): EventBridgeEntry {
-  return buildEntry(EventDetailType.InvoiceIssued, detail, eventBusName)
-}
-
-export function buildInvoiceFailedEntry(
-  detail: InvoiceFailedEvent,
-  eventBusName?: string
-): EventBridgeEntry {
-  return buildEntry(EventDetailType.InvoiceFailed, detail, eventBusName)
 }
 
 export function buildCustomerRegisteredEntry(
