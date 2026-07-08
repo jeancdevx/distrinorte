@@ -32,6 +32,8 @@ resource "aws_lambda_function" "invoice_worker" {
   environment {
     variables = {
       NODE_ENV                       = var.environment
+      POWERTOOLS_SERVICE_NAME        = local.function_name
+      POWERTOOLS_LOG_LEVEL           = "INFO"
       EVENT_BUS_NAME                 = var.event_bus_name
       INVOICES_BUCKET                = var.invoices_bucket_name
       DYNAMODB_INVOICES_TABLE        = var.invoices_table_name
