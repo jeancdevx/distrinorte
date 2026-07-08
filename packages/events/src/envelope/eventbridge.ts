@@ -4,6 +4,8 @@ import {
   type EventDetailTypeName
 } from '@/constants.js'
 import type {
+  InvoiceFailedEvent,
+  InvoiceIssuedEvent,
   OrderConfirmedEvent,
   OrderCreatedEvent,
   StockPendingTransferEvent,
@@ -91,6 +93,20 @@ export function buildOrderConfirmedEntry(
   eventBusName?: string
 ): EventBridgeEntry {
   return buildEntry(EventDetailType.OrderConfirmed, detail, eventBusName)
+}
+
+export function buildInvoiceIssuedEntry(
+  detail: InvoiceIssuedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(EventDetailType.InvoiceIssued, detail, eventBusName)
+}
+
+export function buildInvoiceFailedEntry(
+  detail: InvoiceFailedEvent,
+  eventBusName?: string
+): EventBridgeEntry {
+  return buildEntry(EventDetailType.InvoiceFailed, detail, eventBusName)
 }
 
 export function buildCustomerRegisteredEntry(

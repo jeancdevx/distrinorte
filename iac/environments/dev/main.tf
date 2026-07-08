@@ -119,14 +119,28 @@ module "iam" {
   products_table_arn             = module.dynamodb.products_table_arn
   catalog_availability_table_arn = module.dynamodb.catalog_availability_table_arn
   catalog_images_bucket_arn      = module.s3.catalog_images_bucket_arn
+  invoices_bucket_arn            = module.s3.invoices_bucket_arn
+  invoices_table_arn             = module.dynamodb.invoices_table_arn
+  billing_work_queue_arn         = module.messaging.billing_work_queue_arn
 
-  ecr_repository_arns              = values(module.ecr.repository_arns)
-  enable_github_actions_oidc       = var.enable_github_actions_oidc
-  github_repository                = var.github_repository
-  github_oidc_branches             = var.github_oidc_branches
-  github_oidc_environments         = var.github_oidc_environments
-  github_actions_attach_power_user = var.github_actions_attach_power_user
-  terraform_state_bucket           = var.terraform_state_bucket
+}
+
+
+
+module "invoice_worker" {
+  source = "../../modules/lambda"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  execution_role_arn         = module.iam.invoice_worker_role_arn
+  billing_work_queue_arn     = module.messaging.billing_work_queue_arn
+  event_bus_name             = module.messaging.event_bus_name
+  invoices_bucket_name       = module.s3.invoices_bucket_name
+  invoices_table_name        = module.dynamodb.invoices_table_name
+  invoices_customer_gsi_name = module.dynamodb.invoices_customer_gsi_name
+  source_zip_path            = local.invoice_worker_zip_path
 }
 
 module "ecs_cluster" {
@@ -263,6 +277,7 @@ module "orders_service" {
     EVENT_BUS_NAME             = module.messaging.event_bus_name
     ORDERS_EVENTS_QUEUE_URL    = module.messaging.orders_events_queue_url
     PROJECTIONS_WORK_QUEUE_URL = module.messaging.projections_work_queue_url
+    INVOICES_BUCKET            = module.s3.invoices_bucket_name
   }
 
   sqs_queue_name           = module.messaging.orders_events_queue_name
@@ -330,7 +345,9 @@ module "seed_runner_task" {
   cpu    = 512
   memory = 1024
 
-  environment_variables = local.seed_runner_environment
+  environment_variables = merge(local.seed_runner_environment_base, {
+    CATALOG_ASSETS_BASE_URL = local.catalog_assets_base_url
+  })
 }
 
 
@@ -342,8 +359,8 @@ module "cognito" {
   tags         = local.common_tags
   aws_region   = var.aws_region
 
-  callback_urls = var.cognito_callback_urls
-  logout_urls   = var.cognito_logout_urls
+  callback_urls = local.cognito_callback_urls_effective
+  logout_urls   = local.cognito_logout_urls_effective
 }
 
 module "apigateway" {
@@ -419,9 +436,9 @@ module "cloudfront" {
   origin_verify_secret    = var.origin_verify_secret
   web_acl_id              = module.waf.cloudfront_web_acl_arn
 
-  portal_aliases      = var.cloudfront_portal_aliases
-  api_aliases         = var.cloudfront_api_aliases
-  assets_aliases      = var.cloudfront_assets_aliases
+  portal_aliases      = local.cloudfront_portal_aliases_effective
+  api_aliases         = local.cloudfront_api_aliases_effective
+  assets_aliases      = local.cloudfront_assets_aliases_effective
   acm_certificate_arn = local.cloudfront_certificate_arn
 
   depends_on = [module.route53_acm]
@@ -449,6 +466,13 @@ module "route53_aliases" {
   providers = {
     aws.us_east_1 = aws.us_east_1
   }
+}
+
+# URLs públicas — CloudFront default (*.cloudfront.net) o custom domain (Route53)
+locals {
+  catalog_assets_base_url = local.edge_dns_enabled ? "https://${var.route53_assets_record_name}" : "https://${module.cloudfront.assets_distribution_domain_name}"
+  api_public_base_url     = local.edge_dns_enabled ? "https://${var.route53_api_record_name}" : "https://${module.cloudfront.api_distribution_domain_name}"
+  portal_public_base_url  = local.edge_dns_enabled ? "https://${var.route53_portal_record_name}" : "https://${module.cloudfront.portal_distribution_domain_name}"
 }
 
 
@@ -479,12 +503,14 @@ module "observability" {
   sqs_queue_names = {
     inventory-work   = module.messaging.inventory_work_queue_name
     orders-events    = module.messaging.orders_events_queue_name
+    billing-work     = module.messaging.billing_work_queue_name
     projections-work = module.messaging.projections_work_queue_name
   }
 
   sqs_dlq_names = {
     inventory-work   = module.messaging.inventory_work_dlq_name
     orders-events    = module.messaging.orders_events_dlq_name
+    billing-work     = module.messaging.billing_work_dlq_name
     projections-work = module.messaging.projections_work_dlq_name
   }
 

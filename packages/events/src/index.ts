@@ -7,6 +7,8 @@ export type { OrderLine } from './types/order-line.js'
 export type {
   DomainEvent,
   FulfillmentOrigin,
+  InvoiceFailedEvent,
+  InvoiceIssuedEvent,
   OrderConfirmedEvent,
   OrderConfirmedLine,
   OrderCreatedEvent,
@@ -26,6 +28,8 @@ export {
   buildCatalogPriceUpdatedEntry,
   buildCustomerRegisteredEntry,
   buildCustomerUpdatedEntry,
+  buildInvoiceFailedEntry,
+  buildInvoiceIssuedEntry,
   buildOrderConfirmedEntry,
   buildOrderCreatedEntry,
   buildStockPendingTransferEntry,

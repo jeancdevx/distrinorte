@@ -7,6 +7,8 @@ export const EventDetailType = {
   StockPendingTransfer: 'order.stock_pending_transfer',
   StockTransferCompleted: 'stock.transfer_completed',
   OrderConfirmed: 'order.confirmed',
+  InvoiceIssued: 'invoice.issued',
+  InvoiceFailed: 'invoice.failed',
   CustomerRegistered: 'customer.registered',
   CustomerUpdated: 'customer.updated',
   CatalogPriceUpdated: 'catalog.price_updated',

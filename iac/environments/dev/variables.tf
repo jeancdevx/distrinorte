@@ -208,6 +208,16 @@ variable "redis_snapshot_retention_limit" {
   default     = 7
 }
 
+variable "enable_custom_domain" {
+  description = <<-EOT
+    Activa dominio propio vía Route53 + ACM + aliases CloudFront + Cognito OAuth.
+    false = solo dominios *.cloudfront.net generados por AWS (sin Route53).
+    Para reactivar galaxymorph.com: enable_custom_domain = true y descomentar bloque Route53 en tfvars.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "cognito_callback_urls" {
   description = "OAuth callback URLs del portal B2B"
   type        = list(string)
@@ -324,33 +334,33 @@ variable "container_image_tags" {
   default     = {}
 }
 
-variable "enable_github_actions_oidc" {
-  description = "Crear proveedor OIDC + rol IAM para GitHub Actions"
+variable "enable_github_ci" {
+  description = "Crear roles OIDC separados para deploy y terraform apply en GitHub Actions"
   type        = bool
   default     = false
 }
 
 variable "github_repository" {
-  description = "Repositorio GitHub owner/repo para OIDC (requerido si OIDC habilitado)"
+  description = "Repositorio GitHub owner/repo para OIDC (requerido si enable_github_ci)"
   type        = string
   default     = null
   nullable    = true
 }
 
-variable "github_oidc_branches" {
-  description = "Branches que pueden asumir el rol OIDC"
-  type        = list(string)
-  default     = ["develop", "production"]
+variable "github_environment" {
+  description = "GitHub Environment que puede asumir los roles OIDC (por defecto el nombre del entorno AWS)"
+  type        = string
+  default     = "dev"
 }
 
-variable "github_oidc_environments" {
-  description = "GitHub Environments permitidos para OIDC (ej. dev)"
-  type        = list(string)
-  default     = ["dev"]
+variable "github_create_oidc_provider" {
+  description = "Crear el proveedor OIDC de GitHub en esta cuenta (solo una vez por cuenta AWS)"
+  type        = bool
+  default     = true
 }
 
-variable "github_actions_attach_power_user" {
-  description = "Adjuntar PowerUserAccess al rol OIDC (terraform apply desde CI)"
+variable "github_terraform_grant_admin" {
+  description = "Adjuntar AdministratorAccess al rol de terraform apply (solo dev)"
   type        = bool
   default     = true
 }

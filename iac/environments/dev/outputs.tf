@@ -216,6 +216,26 @@ output "cloudfront_assets_domain_name" {
   value       = module.cloudfront.assets_distribution_domain_name
 }
 
+output "api_public_base_url" {
+  description = "URL publica HTTPS de la API (custom domain o CloudFront default)"
+  value       = local.api_public_base_url
+}
+
+output "portal_public_base_url" {
+  description = "URL publica HTTPS del portal (custom domain o CloudFront default)"
+  value       = local.portal_public_base_url
+}
+
+output "catalog_assets_base_url" {
+  description = "URL base HTTPS de assets de catalogo (custom domain o CloudFront default)"
+  value       = local.catalog_assets_base_url
+}
+
+output "custom_domain_enabled" {
+  description = "Si Route53 + dominio propio estan activos"
+  value       = local.edge_dns_enabled
+}
+
 output "api_gateway_web_acl_id" {
   description = "WAF regional del API Gateway"
   value       = module.waf.api_gateway_web_acl_id
@@ -256,9 +276,14 @@ output "seed_runner_task_definition_arn" {
   value       = module.seed_runner_task.task_definition_arn
 }
 
-output "github_actions_role_arn" {
-  description = "Rol OIDC para GitHub Actions"
-  value       = module.iam.github_actions_role_arn
+output "github_deploy_role_arn" {
+  description = "Rol OIDC para deploy (ECR/ECS) — secret AWS_DEPLOY_ROLE_ARN"
+  value       = try(module.github_oidc[0].deploy_role_arn, null)
+}
+
+output "github_terraform_apply_role_arn" {
+  description = "Rol OIDC para terraform apply — secret AWS_TERRAFORM_APPLY_ROLE_ARN"
+  value       = try(module.github_terraform[0].terraform_apply_role_arn, null)
 }
 
 output "observability_dashboard_name" {

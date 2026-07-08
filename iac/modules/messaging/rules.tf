@@ -43,6 +43,20 @@ resource "aws_cloudwatch_event_rule" "stock_rejected" {
   })
 }
 
+resource "aws_cloudwatch_event_rule" "order_confirmed" {
+  name           = "${local.name_prefix}-order-confirmed-rule"
+  description    = "Route order.confirmed to billing-work"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+
+  event_pattern = jsonencode({
+    source      = [var.event_source]
+    detail-type = ["order.confirmed"]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${local.name_prefix}-order-confirmed-rule"
+  })
+}
 
 resource "aws_cloudwatch_event_rule" "orders_lifecycle_events" {
   name           = "${local.name_prefix}-orders-lifecycle-events-rule"
@@ -54,7 +68,9 @@ resource "aws_cloudwatch_event_rule" "orders_lifecycle_events" {
     detail-type = [
       "order.stock_pending_transfer",
       "stock.transfer_completed",
-                ]
+      "invoice.issued",
+      "invoice.failed",
+    ]
   })
 
   tags = merge(var.tags, {

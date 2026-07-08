@@ -45,6 +45,8 @@ export type OrderRecord = {
   totalTax: number | null
   totalGross: number | null
   estimatedDeliveryDate: string | null
+  invoiceId: string | null
+  pdfUrl: string | null
   rejectionReason: string | null
   correlationId: string
   createdAt: string
@@ -292,6 +294,8 @@ export class OrdersService {
     totalTax: Prisma.Decimal | null
     totalGross: Prisma.Decimal | null
     estimatedDeliveryDate: Date | null
+    invoiceId: string | null
+    pdfUrl: string | null
     correlationId: string
     createdAt: Date
     updatedAt: Date
@@ -327,6 +331,8 @@ export class OrdersService {
       totalTax: order.totalTax === null ? null : Number(order.totalTax),
       totalGross: order.totalGross === null ? null : Number(order.totalGross),
       estimatedDeliveryDate: order.estimatedDeliveryDate?.toISOString() ?? null,
+      invoiceId: order.invoiceId,
+      pdfUrl: order.pdfUrl,
       rejectionReason: order.rejectionReason,
       correlationId: order.correlationId,
       createdAt: order.createdAt.toISOString(),

@@ -101,6 +101,20 @@ export type OrderConfirmedEvent = {
   correlationId: string
 }
 
+export type InvoiceIssuedEvent = {
+  orderId: string
+  invoiceId: string
+  invoiceNumber: string
+  pdfKey: string
+  correlationId: string
+}
+
+export type InvoiceFailedEvent = {
+  orderId: string
+  reason: string
+  correlationId: string
+}
+
 export type DomainEvent =
   | OrderCreatedEvent
   | StockReservedEvent
@@ -108,6 +122,8 @@ export type DomainEvent =
   | StockPendingTransferEvent
   | StockTransferCompletedEvent
   | OrderConfirmedEvent
+  | InvoiceIssuedEvent
+  | InvoiceFailedEvent
   | CustomerRegisteredEvent
   | CustomerUpdatedEvent
   | CatalogPriceUpdatedEvent

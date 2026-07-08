@@ -51,45 +51,22 @@ variable "catalog_images_bucket_arn" {
   nullable    = true
 }
 
-variable "github_repository" {
-  description = "Repositorio GitHub owner/repo para OIDC (ej. org/distrinorte)"
+variable "invoices_bucket_arn" {
+  description = "ARN bucket S3 de facturas PDF"
   type        = string
   default     = null
   nullable    = true
 }
 
-variable "enable_github_actions_oidc" {
-  description = "Crear rol IAM OIDC para GitHub Actions"
-  type        = bool
-  default     = false
+variable "invoices_table_arn" {
+  description = "ARN tabla DynamoDB invoices"
+  type        = string
+  default     = null
+  nullable    = true
 }
 
-variable "github_oidc_branches" {
-  description = "Branches permitidos para asumir el rol OIDC"
-  type        = list(string)
-  default     = ["develop", "production"]
-}
-
-variable "github_oidc_environments" {
-  description = "GitHub Environments permitidos (claim sub ...:environment:NAME)"
-  type        = list(string)
-  default     = ["dev"]
-}
-
-variable "github_actions_attach_power_user" {
-  description = "Adjuntar PowerUserAccess al rol OIDC (terraform apply en dev)"
-  type        = bool
-  default     = true
-}
-
-variable "ecr_repository_arns" {
-  description = "ARNs de repositorios ECR para push desde CI"
-  type        = list(string)
-  default     = []
-}
-
-variable "terraform_state_bucket" {
-  description = "Bucket S3 del backend Terraform (permisos state en rol CI)"
+variable "billing_work_queue_arn" {
+  description = "ARN cola SQS billing-work"
   type        = string
   default     = null
   nullable    = true

@@ -4,6 +4,8 @@ import { OrderStatus, type Prisma } from '@distrinorte/database/orders'
 import {
   EventDetailType,
   parseSqsEventBridgeBody,
+  type InvoiceFailedEvent,
+  type InvoiceIssuedEvent,
   type StockPendingTransferEvent,
   type StockRejectedEvent,
   type StockReservedEvent
@@ -39,6 +41,12 @@ export class OrderEventsHandler {
         return
       case EventDetailType.StockRejected:
         await this.rejectOrderFromEvent(envelope.detail as StockRejectedEvent)
+        return
+      case EventDetailType.InvoiceIssued:
+        await this.attachInvoice(envelope.detail as InvoiceIssuedEvent)
+        return
+      case EventDetailType.InvoiceFailed:
+        await this.logInvoiceFailure(envelope.detail as InvoiceFailedEvent)
         return
       default:
         this.logger.warn(
@@ -183,5 +191,21 @@ export class OrderEventsHandler {
     detail: StockRejectedEvent
   ): Promise<void> {
     await this.rejectOrder(detail.orderId, detail.reason)
+  }
+
+  private async attachInvoice(detail: InvoiceIssuedEvent): Promise<void> {
+    await this.prisma.db.order.updateMany({
+      where: { id: detail.orderId },
+      data: {
+        invoiceId: detail.invoiceId,
+        pdfUrl: detail.pdfKey
+      }
+    })
+  }
+
+  private async logInvoiceFailure(detail: InvoiceFailedEvent): Promise<void> {
+    this.logger.error(
+      `Invoice failed for order ${detail.orderId}: ${detail.reason}`
+    )
   }
 }
