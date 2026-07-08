@@ -1,0 +1,64 @@
+shared-workspace: &shared-workspace
+  - 'package.json'
+  - 'pnpm-lock.yaml'
+  - 'pnpm-workspace.yaml'
+  - 'turbo.json'
+  - 'packages/config/**'
+
+database-package: &database-package
+  - 'packages/database/**'
+
+events-package: &events-package
+  - 'packages/events/**'
+
+shared-package: &shared-package
+  - 'packages/shared/**'
+
+customers-service:
+  - *shared-workspace
+  - *database-package
+  - *shared-package
+  - 'apps/customers-service/**'
+  - 'docker/Dockerfile.service'
+
+inventory-service:
+  - *shared-workspace
+  - *database-package
+  - *events-package
+  - *shared-package
+  - 'apps/inventory-service/**'
+  - 'docker/Dockerfile.service'
+
+orders-service:
+  - *shared-workspace
+  - *database-package
+  - *events-package
+  - *shared-package
+  - 'apps/orders-service/**'
+  - 'docker/Dockerfile.service'
+
+catalog-service:
+  - *shared-workspace
+  - *shared-package
+  - 'apps/catalog-service/**'
+  - 'docker/Dockerfile.service'
+
+seed-runner:
+  - *shared-workspace
+  - *database-package
+  - *events-package
+  - *shared-package
+  - 'packages/seed/**'
+  - 'data/demo/**'
+  - 'docker/Dockerfile.seed'
+
+seed-data:
+  - 'packages/database/prisma/**'
+  - 'packages/seed/**'
+  - 'data/demo/**'
+
+invoice-worker:
+  - *shared-workspace
+  - *events-package
+  - *shared-package
+  - 'packages/invoice-worker/**'
