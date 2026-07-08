@@ -119,7 +119,25 @@ module "iam" {
   products_table_arn             = module.dynamodb.products_table_arn
   catalog_availability_table_arn = module.dynamodb.catalog_availability_table_arn
   catalog_images_bucket_arn      = module.s3.catalog_images_bucket_arn
+  invoices_bucket_arn            = module.s3.invoices_bucket_arn
+  invoices_table_arn             = module.dynamodb.invoices_table_arn
+  billing_work_queue_arn         = module.messaging.billing_work_queue_arn
+}
 
+module "invoice_worker" {
+  source = "../../modules/lambda"
+
+  project_name = local.project_name
+  environment  = local.environment
+  tags         = local.common_tags
+
+  execution_role_arn         = module.iam.invoice_worker_role_arn
+  billing_work_queue_arn     = module.messaging.billing_work_queue_arn
+  event_bus_name             = module.messaging.event_bus_name
+  invoices_bucket_name       = module.s3.invoices_bucket_name
+  invoices_table_name        = module.dynamodb.invoices_table_name
+  invoices_customer_gsi_name = module.dynamodb.invoices_customer_gsi_name
+  source_zip_path            = local.invoice_worker_zip_path
 }
 
 module "github_oidc" {
@@ -284,6 +302,7 @@ module "orders_service" {
     EVENT_BUS_NAME             = module.messaging.event_bus_name
     ORDERS_EVENTS_QUEUE_URL    = module.messaging.orders_events_queue_url
     PROJECTIONS_WORK_QUEUE_URL = module.messaging.projections_work_queue_url
+    INVOICES_BUCKET            = module.s3.invoices_bucket_name
   }
 
   sqs_queue_name           = module.messaging.orders_events_queue_name

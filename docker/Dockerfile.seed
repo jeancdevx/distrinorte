@@ -10,12 +10,14 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages/config packages/config
+COPY packages/events packages/events
 COPY packages/database packages/database
 COPY packages/shared packages/shared
 COPY packages/seed packages/seed
 COPY data/demo data/demo
 RUN pnpm install --frozen-lockfile \
   && pnpm --filter @distrinorte/shared build \
+  && pnpm --filter @distrinorte/events build \
   && pnpm --filter @distrinorte/database build
 
 FROM base AS runner
@@ -29,4 +31,4 @@ COPY --from=deps --chown=seed:nodejs /app/ .
 
 USER seed
 
-CMD ["sh", "-c", "pnpm --filter @distrinorte/database db:ensure-databases && pnpm --filter @distrinorte/database db:migrate:deploy && pnpm --filter @distrinorte/database db:migrate:legacy-split && pnpm --filter @distrinorte/database db:seed && pnpm --filter @distrinorte/seed seed:aws"]
+CMD ["sh", "-c", "pnpm --filter @distrinorte/database db:ensure-databases && pnpm --filter @distrinorte/database db:migrate:deploy && pnpm --filter @distrinorte/database db:seed && pnpm --filter @distrinorte/seed seed:aws"]

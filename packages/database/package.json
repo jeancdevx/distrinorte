@@ -38,7 +38,6 @@
     "db:migrate:dev:orders": "prisma migrate dev --schema prisma/orders/schema.prisma --config prisma/orders/prisma.config.ts",
     "db:migrate:dev:inventory": "prisma migrate dev --schema prisma/inventory/schema.prisma --config prisma/inventory/prisma.config.ts",
     "db:seed": "tsx prisma/seed/index.ts",
-    "db:migrate:legacy-split": "tsx scripts/migrate-legacy-split.ts",
     "lint": "oxlint src prisma prisma.config.ts scripts",
     "typecheck": "tsc --noEmit"
   },

@@ -3,19 +3,19 @@ import { randomUUID } from 'node:crypto'
 import { Injectable, Logger } from '@nestjs/common'
 
 import {
+  ReservationStatus,
+  StockTransferStatus
+} from '@distrinorte/database/inventory'
+import {
   EventDetailType,
   parseSqsEventBridgeBody,
-  type OrderCreatedEvent,
-  type OrderLine
+  type OrderCreatedEvent
 } from '@distrinorte/events'
 
 import { PrismaService } from '../database/prisma.service.js'
 import { EventBridgePublisher } from '../messaging/eventbridge.publisher.js'
 import { InventoryService } from './inventory.service.js'
-
-type AvailabilityResult =
-  | { ok: true }
-  | { ok: false; reason: string; lines: OrderLine[] }
+import { SourcingService } from './sourcing.service.js'
 
 @Injectable()
 export class StockReservationService {
@@ -24,7 +24,8 @@ export class StockReservationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly inventoryService: InventoryService,
-    private readonly eventBridge: EventBridgePublisher
+    private readonly eventBridge: EventBridgePublisher,
+    private readonly sourcingService: SourcingService
   ) {}
 
   async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
@@ -37,38 +38,52 @@ export class StockReservationService {
       return
     }
 
-    const availability = await this.checkAvailability(
+    const sourcing = await this.sourcingService.planOrder(
+      event.warehouseId,
       event.lines,
-      event.warehouseId
+      (sku, warehouseId) =>
+        this.inventoryService.getStockFromDatabase(sku, warehouseId)
     )
 
-    if (!availability.ok) {
+    if (!sourcing.ok) {
       await this.eventBridge.publishStockRejected({
         orderId: event.orderId,
-        reason: availability.reason,
-        lines: availability.lines,
+        reason: sourcing.reason,
+        lines: event.lines,
+        lineDetails: sourcing.lineDetails,
         correlationId: event.correlationId
       })
 
       return
     }
 
+    const { plan } = sourcing
+    const transferId = randomUUID()
     const reservationId = randomUUID()
+    const matrix = await this.loadTransferMatrix(event.warehouseId)
 
     await this.prisma.db.$transaction(async tx => {
-      for (const line of event.lines) {
-        const inventory = await tx.inventory.update({
+      for (const line of plan.lines) {
+        for (const transfer of line.transfers) {
+          await tx.inventory.update({
+            where: {
+              sku_warehouseId: {
+                sku: line.sku,
+                warehouseId: transfer.fromWarehouseId
+              }
+            },
+            data: { quantity: { decrement: transfer.quantityBase } }
+          })
+        }
+
+        await tx.inventory.update({
           where: {
             sku_warehouseId: {
               sku: line.sku,
-              warehouseId: event.warehouseId
+              warehouseId: plan.destinationWarehouseId
             }
           },
-          data: {
-            quantity: {
-              decrement: line.quantity
-            }
-          }
+          data: { quantity: { decrement: line.requiredBase } }
         })
 
         await tx.reservation.create({
@@ -76,31 +91,110 @@ export class StockReservationService {
             id: randomUUID(),
             orderId: event.orderId,
             sku: line.sku,
-            warehouseId: event.warehouseId,
-            quantity: line.quantity
+            warehouseId: plan.destinationWarehouseId,
+            quantity: line.requiredBase,
+            status: plan.requiresTransfer
+              ? ReservationStatus.PENDING_TRANSFER
+              : ReservationStatus.CONFIRMED
           }
         })
+      }
 
-        await this.inventoryService.setStockCache(
-          line.sku,
-          event.warehouseId,
-          inventory.quantity
+      if (plan.requiresTransfer) {
+        await tx.stockTransfer.create({
+          data: {
+            id: transferId,
+            orderId: event.orderId,
+            destinationWarehouseId: plan.destinationWarehouseId,
+            status: StockTransferStatus.ALLOCATED,
+            lines: {
+              create: plan.lines.flatMap(line =>
+                line.transfers.map(transfer => ({
+                  id: randomUUID(),
+                  sku: line.sku,
+                  fromWarehouseId: transfer.fromWarehouseId,
+                  quantityBase: transfer.quantityBase
+                }))
+              )
+            }
+          }
+        })
+      }
+    })
+
+    const touchedSkus = new Set(event.lines.map(line => line.sku))
+    const touchedWarehouses = new Set<string>([plan.destinationWarehouseId])
+    for (const item of plan.fulfillment) {
+      touchedWarehouses.add(item.warehouseId)
+    }
+
+    for (const warehouseId of touchedWarehouses) {
+      for (const sku of touchedSkus) {
+        const quantity = await this.inventoryService.getStockFromDatabase(
+          sku,
+          warehouseId
         )
 
+        if (quantity === null) {
+          continue
+        }
+
+        await this.inventoryService.setStockCache(sku, warehouseId, quantity)
         await this.eventBridge.publishAvailabilityUpdated({
-          warehouseId: event.warehouseId,
-          sku: line.sku,
-          availableQty: inventory.quantity,
+          warehouseId,
+          sku,
+          availableQty: quantity,
           asOf: new Date().toISOString(),
           correlationId: event.correlationId
         })
       }
-    })
+    }
+
+    if (plan.requiresTransfer) {
+      await this.eventBridge.publishStockPendingTransfer({
+        orderId: event.orderId,
+        destinationWarehouseId: plan.destinationWarehouseId,
+        transferId,
+        fulfillment: plan.fulfillment,
+        correlationId: event.correlationId
+      })
+
+      await this.prisma.db.stockTransfer.update({
+        where: { id: transferId },
+        data: {
+          status: StockTransferStatus.COMPLETED,
+          completedAt: new Date()
+        }
+      })
+
+      await this.prisma.db.reservation.updateMany({
+        where: { orderId: event.orderId },
+        data: { status: ReservationStatus.CONFIRMED }
+      })
+
+      await this.eventBridge.publishStockTransferCompleted({
+        orderId: event.orderId,
+        transferId,
+        correlationId: event.correlationId
+      })
+    }
+
+    const confirmedAt = new Date()
+    const transferDays = this.calculateTransferDays(
+      plan.destinationWarehouseId,
+      plan.fulfillment,
+      matrix,
+      confirmedAt
+    )
 
     await this.eventBridge.publishStockReserved({
       orderId: event.orderId,
       reservationId,
       lines: event.lines,
+      fulfillment: plan.fulfillment,
+      transferDays,
+      transferMatrix: matrix,
+      confirmedAt: confirmedAt.toISOString(),
       correlationId: event.correlationId
     })
   }
@@ -116,28 +210,51 @@ export class StockReservationService {
     await this.handleOrderCreated(envelope.detail)
   }
 
-  private async checkAvailability(
-    lines: OrderLine[],
-    warehouseId: string
-  ): Promise<AvailabilityResult> {
-    for (const line of lines) {
-      const quantity = await this.inventoryService.getStockFromDatabase(
-        line.sku,
-        warehouseId
-      )
+  private async loadTransferMatrix(destinationWarehouseId: string) {
+    const rows = await this.prisma.db.transferMatrix.findMany({
+      where: { toWarehouseId: destinationWarehouseId }
+    })
 
-      if (quantity === null || quantity < line.quantity) {
-        return {
-          ok: false,
-          reason:
-            quantity === null
-              ? `Stock not found for ${line.sku}`
-              : `Insufficient stock for ${line.sku}`,
-          lines
-        }
+    return rows.map(row => ({
+      fromWarehouseId: row.fromWarehouseId,
+      toWarehouseId: row.toWarehouseId,
+      businessDays: row.businessDays,
+      cutoffHour: row.cutoffHour
+    }))
+  }
+
+  private calculateTransferDays(
+    destinationWarehouseId: string,
+    fulfillment: Array<{ warehouseId: string }>,
+    matrix: Array<{
+      fromWarehouseId: string
+      businessDays: number
+      cutoffHour: number
+    }>,
+    confirmedAt: Date
+  ): number {
+    let transferDays = 0
+
+    for (const item of fulfillment) {
+      if (item.warehouseId === destinationWarehouseId) {
+        continue
+      }
+
+      const entry = matrix.find(row => row.fromWarehouseId === item.warehouseId)
+
+      if (entry) {
+        transferDays = Math.max(transferDays, entry.businessDays)
       }
     }
 
-    return { ok: true }
+    const cutoffHour =
+      matrix.find(row => row.fromWarehouseId === destinationWarehouseId)
+        ?.cutoffHour ?? 14
+
+    if (confirmedAt.getHours() >= cutoffHour) {
+      transferDays += 1
+    }
+
+    return transferDays
   }
 }

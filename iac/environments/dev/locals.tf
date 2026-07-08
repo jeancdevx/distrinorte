@@ -50,6 +50,7 @@ locals {
     name => "${module.ecr.repository_urls[name]}:${local.ecs_image_tag[name]}"
   }
 
+  invoice_worker_zip_path = fileexists("${path.module}/../../../packages/invoice-worker/dist/handler.zip") ? abspath("${path.module}/../../../packages/invoice-worker/dist/handler.zip") : null
 
   seed_runner_environment_base = {
     NODE_ENV                            = var.environment

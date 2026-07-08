@@ -8,35 +8,63 @@ datasource db {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  customerId      String      @map("customer_id")
-  warehouseId     String      @map("warehouse_id")
-  status          OrderStatus @default(PENDING)
-  rejectionReason String?     @map("rejection_reason")
-  idempotencyKey  String      @unique @map("idempotency_key")
-  correlationId   String      @map("correlation_id")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  lines           OrderLine[]
+  id                    String      @id @default(uuid())
+  customerId            String      @map("customer_id")
+  warehouseId           String      @map("warehouse_id")
+  status                OrderStatus @default(PENDING)
+  rejectionReason       String?     @map("rejection_reason")
+  totalNet              Decimal?    @map("total_net") @db.Decimal(12, 2)
+  totalTax              Decimal?    @map("total_tax") @db.Decimal(12, 2)
+  totalGross            Decimal?    @map("total_gross") @db.Decimal(12, 2)
+  estimatedDeliveryDate DateTime?   @map("estimated_delivery_date")
+  invoiceId             String?     @map("invoice_id")
+  pdfUrl                String?     @map("pdf_url")
+  idempotencyKey        String      @unique @map("idempotency_key")
+  correlationId         String      @map("correlation_id")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+  lines                 OrderLine[]
 
   @@index([customerId, createdAt(sort: Desc)])
   @@map("orders")
 }
 
 model OrderLine {
-  id       String @id @default(uuid())
-  orderId  String @map("order_id")
-  sku      String
-  quantity Int
-  order    Order  @relation(fields: [orderId], references: [id])
+  id               String  @id @default(uuid())
+  orderId          String  @map("order_id")
+  sku              String
+  quantity         Int
+  unitPriceNet     Decimal @map("unit_price_net") @db.Decimal(12, 2)
+  saleUnit         String  @default("UN") @map("sale_unit")
+  unitsPerBaseUnit Int     @default(1) @map("units_per_base_unit")
+  taxAffectation   String  @default("GRAVADO") @map("tax_affectation")
+  lineNet          Decimal @map("line_net") @db.Decimal(12, 2)
+  lineTax          Decimal @map("line_tax") @db.Decimal(12, 2)
+  lineGross        Decimal @map("line_gross") @db.Decimal(12, 2)
+  order            Order   @relation(fields: [orderId], references: [id])
 
   @@map("order_lines")
 }
 
 enum OrderStatus {
   PENDING
+  AWAITING_TRANSFER
   CONFIRMED
   REJECTED
+  CANCELLED
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  eventType     String    @map("event_type")
+  payload       Json
+  createdAt     DateTime  @default(now()) @map("created_at")
+  publishedAt   DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox_events")
 }
 
 model CustomerSnapshot {

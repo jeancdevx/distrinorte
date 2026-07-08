@@ -14,8 +14,23 @@ describe('eventbridge envelope helpers', () => {
   const orderCreatedDetail = {
     orderId: 'ord-1',
     customerId: 'cust-1',
-    warehouseId: 'wh-1',
-    lines: [{ sku: 'SKU-1', quantity: 2 }],
+    warehouseId: 'trujillo',
+    lines: [
+      {
+        sku: 'SKU-1',
+        quantity: 10,
+        unitPriceNet: 25,
+        saleUnit: 'UN',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO',
+        lineNet: 250,
+        lineTax: 45,
+        lineGross: 295
+      }
+    ],
+    totalNet: 250,
+    totalTax: 45,
+    totalGross: 295,
     correlationId: 'corr-1'
   }
 
@@ -39,6 +54,10 @@ describe('eventbridge envelope helpers', () => {
       orderId: 'ord-1',
       reservationId: 'res-1',
       lines: [{ sku: 'SKU-1', quantity: 2 }],
+      fulfillment: [],
+      transferDays: 0,
+      transferMatrix: [],
+      confirmedAt: '2026-01-01T00:00:00.000Z',
       correlationId: 'corr-1'
     }
     const rejected = {

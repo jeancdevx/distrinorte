@@ -38,6 +38,12 @@ variable "visibility_timeout_seconds" {
   default     = 60
 }
 
+variable "billing_visibility_timeout_seconds" {
+  description = "Visibility timeout de billing-work (>= timeout del invoice-worker Lambda)"
+  type        = number
+  default     = 120
+}
+
 variable "max_receive_count" {
   description = "Recepciones antes de enviar mensaje a DLQ"
   type        = number

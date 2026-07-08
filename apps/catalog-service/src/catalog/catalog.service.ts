@@ -8,6 +8,10 @@ export type CatalogProduct = {
   sku: string
   name: string
   price: number
+  unitPriceNet: number
+  saleUnit: string
+  unitsPerBaseUnit: number
+  taxAffectation: string
   category: string
   imageKey: string
   imageUrl: string
@@ -51,6 +55,10 @@ export class CatalogService {
       sku: string
       name: string
       price: number
+      unitPriceNet: number
+      saleUnit: string
+      unitsPerBaseUnit: number
+      taxAffectation: string
       category: string
       imageKey: string
     }>,
@@ -77,7 +85,11 @@ export class CatalogService {
       return {
         sku: product.sku,
         name: product.name,
-        price: product.price,
+        price: product.unitPriceNet,
+        unitPriceNet: product.unitPriceNet,
+        saleUnit: product.saleUnit,
+        unitsPerBaseUnit: product.unitsPerBaseUnit,
+        taxAffectation: product.taxAffectation,
         category: product.category,
         imageKey: product.imageKey,
         imageUrl: buildImageUrl(product.imageKey),

@@ -4,5 +4,6 @@ locals {
 
   portal_spa_bucket_name     = "${local.name_prefix}-portal-spa-${local.account_id}"
   catalog_images_bucket_name = "${local.name_prefix}-catalog-images-${local.account_id}"
+  invoices_bucket_name       = "${local.name_prefix}-invoices-${local.account_id}"
   backups_bucket_name        = "${local.name_prefix}-backups-${local.account_id}"
 }
