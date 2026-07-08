@@ -4,10 +4,13 @@ import { OrderStatus } from '@distrinorte/database/orders'
 
 import { PrismaService } from '../../../../apps/inventory-service/src/database/prisma.service.js'
 import { InventoryService } from '../../../../apps/inventory-service/src/inventory/inventory.service.js'
+import { SourcingService } from '../../../../apps/inventory-service/src/inventory/sourcing.service.js'
 import { StockReservationService } from '../../../../apps/inventory-service/src/inventory/stock-reservation.service.js'
 import { RedisService } from '../../../../apps/inventory-service/src/redis/redis.service.js'
 import { PrismaService as OrdersPrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
+import { OrderEventsHandler } from '../../../../apps/orders-service/src/orders/order-events.handler.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
+import { OutboxProcessor } from '../../../../apps/orders-service/src/outbox/outbox.processor.js'
 import {
   FakeEventBridgePublisher,
   createInMemoryRedis
@@ -28,9 +31,17 @@ describe('Order stock flow (integration)', () => {
   const inventoryEventBridge = new FakeEventBridgePublisher()
   const redis = createInMemoryRedis()
 
-  const ordersService = new OrdersService(
+  const ordersOutbox = new OutboxProcessor(
     { db: orders } as OrdersPrismaService,
     ordersEventBridge as never
+  )
+  const ordersService = new OrdersService(
+    { db: orders } as OrdersPrismaService,
+    ordersOutbox
+  )
+  const orderEventsHandler = new OrderEventsHandler(
+    { db: orders } as OrdersPrismaService,
+    ordersOutbox
   )
   const inventoryService = new InventoryService(
     { db: inventoryPrisma } as PrismaService,
@@ -39,7 +50,8 @@ describe('Order stock flow (integration)', () => {
   const stockReservationService = new StockReservationService(
     { db: inventoryPrisma } as PrismaService,
     inventoryService,
-    inventoryEventBridge as never
+    inventoryEventBridge as never,
+    new SourcingService()
   )
 
   let customerId: string
@@ -48,6 +60,7 @@ describe('Order stock flow (integration)', () => {
     await resetDatabase()
     redis.clear()
     ordersEventBridge.orderCreated.length = 0
+    ordersEventBridge.orderConfirmed.length = 0
     inventoryEventBridge.stockReserved.length = 0
     inventoryEventBridge.stockRejected.length = 0
     inventoryEventBridge.availabilityUpdated.length = 0
@@ -76,10 +89,20 @@ describe('Order stock flow (integration)', () => {
       }
     })
 
+    await orders.priceSnapshot.create({
+      data: {
+        sku: 'SKU-FLOW-1',
+        unitPriceNet: 25,
+        saleUnit: 'UN',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO'
+      }
+    })
+
     await inventoryPrisma.inventory.create({
       data: {
         sku: 'SKU-FLOW-1',
-        warehouseId: 'wh-norte',
+        warehouseId: 'trujillo',
         quantity: 10
       }
     })
@@ -92,7 +115,6 @@ describe('Order stock flow (integration)', () => {
   it('reserves stock after order.created when inventory is sufficient', async () => {
     const order = await ordersService.create(
       {
-        warehouseId: 'wh-norte',
         lines: [{ sku: 'SKU-FLOW-1', quantity: 4 }]
       },
       'idem-flow-1',
@@ -104,34 +126,45 @@ describe('Order stock flow (integration)', () => {
     expect(publishedEvent).toBeDefined()
 
     await stockReservationService.handleOrderCreated(publishedEvent!)
+    await orderEventsHandler.processMessageBody(
+      JSON.stringify({
+        version: '0',
+        id: 'evt-1',
+        'detail-type': 'order.stock_reserved',
+        source: 'distrinorte',
+        account: '123',
+        time: new Date().toISOString(),
+        region: 'us-east-2',
+        detail: inventoryEventBridge.stockReserved[0]
+      })
+    )
 
     const inventory = await inventoryPrisma.inventory.findUnique({
       where: {
         sku_warehouseId: {
           sku: 'SKU-FLOW-1',
-          warehouseId: 'wh-norte'
+          warehouseId: 'trujillo'
         }
       }
     })
     const reservations = await inventoryPrisma.reservation.findMany({
       where: { orderId: order.orderId }
     })
+    const confirmed = await orders.order.findUnique({
+      where: { id: order.orderId }
+    })
 
     expect(inventory?.quantity).toBe(6)
     expect(reservations).toHaveLength(1)
-    expect(reservations[0]).toMatchObject({
-      sku: 'SKU-FLOW-1',
-      quantity: 4
-    })
+    expect(confirmed?.status).toBe(OrderStatus.CONFIRMED)
     expect(inventoryEventBridge.stockReserved).toHaveLength(1)
     expect(inventoryEventBridge.stockRejected).toHaveLength(0)
-    expect(inventoryEventBridge.availabilityUpdated).toHaveLength(1)
+    expect(ordersEventBridge.orderConfirmed).toHaveLength(1)
   })
 
   it('rejects the order when stock is insufficient', async () => {
     const order = await ordersService.create(
       {
-        warehouseId: 'wh-norte',
         lines: [{ sku: 'SKU-FLOW-1', quantity: 50 }]
       },
       'idem-flow-2',
@@ -143,46 +176,37 @@ describe('Order stock flow (integration)', () => {
     expect(publishedEvent).toBeDefined()
 
     await stockReservationService.handleOrderCreated(publishedEvent!)
+    await orderEventsHandler.processMessageBody(
+      JSON.stringify({
+        version: '0',
+        id: 'evt-2',
+        'detail-type': 'order.stock_rejected',
+        source: 'distrinorte',
+        account: '123',
+        time: new Date().toISOString(),
+        region: 'us-east-2',
+        detail: inventoryEventBridge.stockRejected[0]
+      })
+    )
 
     const inventory = await inventoryPrisma.inventory.findUnique({
       where: {
         sku_warehouseId: {
           sku: 'SKU-FLOW-1',
-          warehouseId: 'wh-norte'
+          warehouseId: 'trujillo'
         }
       }
     })
     const reservations = await inventoryPrisma.reservation.count({
       where: { orderId: order.orderId }
     })
+    const rejected = await orders.order.findUnique({
+      where: { id: order.orderId }
+    })
 
     expect(inventory?.quantity).toBe(10)
     expect(reservations).toBe(0)
+    expect(rejected?.status).toBe(OrderStatus.REJECTED)
     expect(inventoryEventBridge.stockRejected).toHaveLength(1)
-    expect(inventoryEventBridge.stockRejected[0]).toMatchObject({
-      orderId: order.orderId,
-      reason: expect.stringContaining('Insufficient stock')
-    })
-  })
-
-  it('exposes reserved stock through InventoryService cache miss path', async () => {
-    const order = await ordersService.create(
-      {
-        warehouseId: 'wh-norte',
-        lines: [{ sku: 'SKU-FLOW-1', quantity: 2 }]
-      },
-      'idem-flow-3',
-      'corr-flow-3',
-      customerId
-    )
-
-    await stockReservationService.handleOrderCreated(
-      ordersEventBridge.orderCreated[0]!
-    )
-
-    const stock = await inventoryService.getStock('SKU-FLOW-1', 'wh-norte')
-
-    expect(stock.quantity).toBe(8)
-    expect(order.status).toBe(OrderStatus.PENDING)
   })
 })

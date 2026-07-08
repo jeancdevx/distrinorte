@@ -14,7 +14,7 @@ export function parseCreateCustomerInput(body: unknown): CreateCustomerInput {
   const name = readNonEmptyString(record.name, 'name')
   const taxId = readNonEmptyString(record.taxId, 'taxId')
   const email = readNonEmptyString(record.email, 'email')
-  const assignedWarehouseId = readOptionalWarehouseId(
+  const assignedWarehouseId = readRequiredWarehouseId(
     record.assignedWarehouseId
   )
 
@@ -25,11 +25,7 @@ export function parseCreateCustomerInput(body: unknown): CreateCustomerInput {
   return { name, taxId, email, assignedWarehouseId }
 }
 
-function readOptionalWarehouseId(value: unknown): string {
-  if (value === undefined || value === null || value === '') {
-    return 'trujillo'
-  }
-
+function readRequiredWarehouseId(value: unknown): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new Error('INVALID_ASSIGNEDWAREHOUSEID')
   }

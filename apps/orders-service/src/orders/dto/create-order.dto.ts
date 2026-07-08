@@ -1,7 +1,6 @@
 import { isValidOrderLine, type OrderLineInput } from '@distrinorte/shared'
 
 export type CreateOrderInput = {
-  warehouseId: string
   lines: OrderLineInput[]
 }
 
@@ -11,14 +10,13 @@ export function parseCreateOrderInput(body: unknown): CreateOrderInput {
   }
 
   const record = body as Record<string, unknown>
-  const warehouseId = readNonEmptyString(record.warehouseId, 'warehouseId')
   const lines = parseLines(record.lines)
 
   if (lines.length === 0) {
     throw new Error('INVALID_LINES')
   }
 
-  return { warehouseId, lines }
+  return { lines }
 }
 
 function parseLines(value: unknown): OrderLineInput[] {

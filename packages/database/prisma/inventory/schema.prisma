@@ -39,12 +39,49 @@ model Inventory {
 }
 
 model Reservation {
-  id          String   @id @default(uuid())
-  orderId     String   @map("order_id")
+  id          String            @id @default(uuid())
+  orderId     String            @map("order_id")
   sku         String
-  warehouseId String   @map("warehouse_id")
+  warehouseId String            @map("warehouse_id")
   quantity    Int
-  createdAt   DateTime @default(now()) @map("created_at")
+  status      ReservationStatus @default(CONFIRMED)
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   @@map("reservations")
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  PENDING_TRANSFER
+}
+
+model StockTransfer {
+  id                    String              @id @default(uuid())
+  orderId               String              @map("order_id")
+  destinationWarehouseId String             @map("destination_warehouse_id")
+  status                StockTransferStatus @default(ALLOCATED)
+  createdAt             DateTime            @default(now()) @map("created_at")
+  completedAt           DateTime?           @map("completed_at")
+  lines                 StockTransferLine[]
+
+  @@index([orderId])
+  @@map("stock_transfers")
+}
+
+model StockTransferLine {
+  id              String        @id @default(uuid())
+  transferId      String        @map("transfer_id")
+  sku             String
+  fromWarehouseId String        @map("from_warehouse_id")
+  quantityBase    Int           @map("quantity_base")
+  transfer        StockTransfer @relation(fields: [transferId], references: [id])
+
+  @@map("stock_transfer_lines")
+}
+
+enum StockTransferStatus {
+  ALLOCATED
+  IN_TRANSIT
+  COMPLETED
+  FAILED
 }
