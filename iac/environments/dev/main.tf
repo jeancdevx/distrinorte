@@ -212,6 +212,8 @@ module "customers_service" {
   environment_variables = {
     PORT              = "3004"
     NODE_ENV          = var.environment
+    SERVICE_NAME      = "customers-service"
+    LOG_LEVEL         = "info"
     AWS_REGION        = var.aws_region
     DATABASE_HOST     = module.rds.endpoint
     DATABASE_PORT     = tostring(module.rds.port)
@@ -249,6 +251,8 @@ module "inventory_service" {
   environment_variables = {
     PORT                                   = "3002"
     NODE_ENV                               = var.environment
+    SERVICE_NAME                           = "inventory-service"
+    LOG_LEVEL                              = "info"
     AWS_REGION                             = var.aws_region
     DATABASE_HOST                          = module.rds.endpoint
     DATABASE_PORT                          = tostring(module.rds.port)
@@ -293,6 +297,8 @@ module "orders_service" {
   environment_variables = {
     PORT                       = "3001"
     NODE_ENV                   = var.environment
+    SERVICE_NAME               = "orders-service"
+    LOG_LEVEL                  = "info"
     AWS_REGION                 = var.aws_region
     DATABASE_HOST              = module.rds.endpoint
     DATABASE_PORT              = tostring(module.rds.port)
@@ -334,6 +340,8 @@ module "catalog_service" {
   environment_variables = {
     PORT                                = "3003"
     NODE_ENV                            = var.environment
+    SERVICE_NAME                        = "catalog-service"
+    LOG_LEVEL                           = "info"
     AWS_REGION                          = var.aws_region
     DYNAMODB_PRODUCTS_TABLE             = module.dynamodb.products_table_name
     DYNAMODB_CATEGORY_GSI               = module.dynamodb.products_category_gsi_name

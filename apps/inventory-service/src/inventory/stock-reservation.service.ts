@@ -76,15 +76,17 @@ export class StockReservationService {
           })
         }
 
-        await tx.inventory.update({
-          where: {
-            sku_warehouseId: {
-              sku: line.sku,
-              warehouseId: plan.destinationWarehouseId
-            }
-          },
-          data: { quantity: { decrement: line.requiredBase } }
-        })
+        if (line.localBase > 0) {
+          await tx.inventory.update({
+            where: {
+              sku_warehouseId: {
+                sku: line.sku,
+                warehouseId: plan.destinationWarehouseId
+              }
+            },
+            data: { quantity: { decrement: line.localBase } }
+          })
+        }
 
         await tx.reservation.create({
           data: {

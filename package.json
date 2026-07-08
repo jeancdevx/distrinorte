@@ -14,7 +14,7 @@
     "typecheck": "turbo run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:unit": "vitest run --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
+    "test:unit": "vitest run --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/inventory-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
     "test:integration": "vitest run --project '@distrinorte/integration-tests'",
     "test:coverage": "vitest run --coverage --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
     "db:ensure-databases": "pnpm --filter @distrinorte/database db:ensure-databases",

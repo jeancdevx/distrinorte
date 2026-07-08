@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Logger } from '@aws-lambda-powertools/logger'
 import {
   ConditionalCheckFailedException,
   DynamoDBClient
@@ -24,12 +25,13 @@ import {
 import { renderInvoicePdf } from './invoice-pdf.js'
 
 const SEQUENCE_PK = 'SEQUENCE#invoiceNumber'
+const logger = new Logger({ serviceName: 'invoice-worker' })
 
 export async function processOrderConfirmed(
   order: OrderConfirmedEvent
 ): Promise<void> {
   const region = process.env.AWS_REGION ?? 'us-east-2'
-  const invoicesTable = requiredEnv('INVOICES_TABLE_NAME')
+  const invoicesTable = requiredEnv('DYNAMODB_INVOICES_TABLE')
   const invoicesBucket = requiredEnv('INVOICES_BUCKET')
   const eventBusName = requiredEnv('EVENT_BUS_NAME')
 
@@ -42,6 +44,14 @@ export async function processOrderConfirmed(
     const invoiceId = randomUUID()
     const year = new Date().getUTCFullYear()
     const pdfKey = `invoices/${year}/${invoiceNumber}.pdf`
+
+    logger.info('Rendering invoice PDF', {
+      orderId: order.orderId,
+      invoiceId,
+      invoiceNumber,
+      correlationId: order.correlationId
+    })
+
     const pdfBytes = await renderInvoicePdf(invoiceNumber, order)
 
     await s3.send(
@@ -52,6 +62,12 @@ export async function processOrderConfirmed(
         ContentType: 'application/pdf'
       })
     )
+
+    logger.info('Uploaded invoice PDF', {
+      orderId: order.orderId,
+      pdfKey,
+      bucket: invoicesBucket
+    })
 
     await dynamo.send(
       new PutCommand({
@@ -86,9 +102,23 @@ export async function processOrderConfirmed(
         Entries: [issuedEntry]
       })
     )
+
+    logger.info('Published invoice.issued', {
+      orderId: order.orderId,
+      invoiceId,
+      invoiceNumber,
+      correlationId: order.correlationId
+    })
   } catch (error) {
     const reason =
       error instanceof Error ? error.message : 'Unknown invoice worker error'
+
+    logger.error('Invoice processing failed', {
+      orderId: order.orderId,
+      reason,
+      correlationId: order.correlationId,
+      error: error instanceof Error ? error.stack : String(error)
+    })
 
     const failedEntry = buildInvoiceFailedEntry(
       {

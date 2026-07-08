@@ -17,6 +17,7 @@ export {
   getCorrelationIdHeaderName,
   resolveCorrelationId
 } from './correlation/correlation-id.js'
+export { PinoLoggerModule } from './logging/pino-logger.module.js'
 export {
   fail,
   ok,
