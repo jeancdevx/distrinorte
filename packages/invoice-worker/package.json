@@ -1,0 +1,27 @@
+{
+  "name": "@distrinorte/invoice-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "lint": "oxlint src",
+    "typecheck": "tsc --noEmit",
+    "package:lambda": "pnpm build && mkdir -p dist && cd dist && zip -q handler.zip index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1075.0",
+    "@aws-sdk/client-eventbridge": "3.1075.0",
+    "@aws-sdk/client-s3": "3.1075.0",
+    "@aws-sdk/lib-dynamodb": "3.1075.0",
+    "@distrinorte/events": "workspace:*",
+    "pdf-lib": "1.17.1"
+  },
+  "devDependencies": {
+    "@distrinorte/config": "workspace:*",
+    "@types/aws-lambda": "8.10.159",
+    "@types/node": "25.9.3",
+    "rolldown": "1.1.1",
+    "typescript": "6.0.3"
+  }
+}
