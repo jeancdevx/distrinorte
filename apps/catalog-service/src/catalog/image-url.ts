@@ -1,6 +1,9 @@
 export function buildImageUrl(imageKey: string): string {
-  const baseUrl =
-    process.env.CATALOG_ASSETS_BASE_URL ?? 'https://assets.galaxymorph.com'
+  const baseUrl = process.env.CATALOG_ASSETS_BASE_URL?.replace(/\/$/, '')
 
-  return `${baseUrl.replace(/\/$/, '')}/${imageKey.replace(/^\//, '')}`
+  if (!baseUrl) {
+    return `/${imageKey.replace(/^\//, '')}`
+  }
+
+  return `${baseUrl}/${imageKey.replace(/^\//, '')}`
 }
