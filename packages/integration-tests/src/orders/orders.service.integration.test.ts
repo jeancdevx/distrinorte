@@ -4,6 +4,7 @@ import { OrderStatus } from '@distrinorte/database/orders'
 
 import { PrismaService } from '../../../../apps/orders-service/src/database/prisma.service.js'
 import { OrdersService } from '../../../../apps/orders-service/src/orders/orders.service.js'
+import { OutboxProcessor } from '../../../../apps/orders-service/src/outbox/outbox.processor.js'
 import { FakeEventBridgePublisher } from '../setup/fakes.js'
 import {
   disconnectTestPrisma,
@@ -14,9 +15,13 @@ import {
 describe('OrdersService (integration)', () => {
   const { customers, orders: prisma } = getTestPrismaClients()
   const eventBridge = new FakeEventBridgePublisher()
-  const service = new OrdersService(
+  const outboxProcessor = new OutboxProcessor(
     { db: prisma } as PrismaService,
     eventBridge as never
+  )
+  const service = new OrdersService(
+    { db: prisma } as PrismaService,
+    outboxProcessor
   )
 
   let customerId: string
@@ -48,6 +53,16 @@ describe('OrdersService (integration)', () => {
         status: 'ACTIVE'
       }
     })
+
+    await prisma.priceSnapshot.create({
+      data: {
+        sku: 'SKU-001',
+        unitPriceNet: 25,
+        saleUnit: 'CAJA',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO'
+      }
+    })
   })
 
   afterAll(async () => {
@@ -57,8 +72,7 @@ describe('OrdersService (integration)', () => {
   it('creates an order and publishes order.created', async () => {
     const order = await service.create(
       {
-        warehouseId: 'wh-norte',
-        lines: [{ sku: 'SKU-001', quantity: 2 }]
+        lines: [{ sku: 'SKU-001', quantity: 10 }]
       },
       'idem-integration-1',
       'corr-integration-1',
@@ -68,8 +82,8 @@ describe('OrdersService (integration)', () => {
     expect(order).toMatchObject({
       status: OrderStatus.PENDING,
       customerId,
-      warehouseId: 'wh-norte',
-      lines: [{ sku: 'SKU-001', quantity: 2 }]
+      warehouseId: 'trujillo',
+      totalGross: 295
     })
 
     const stored = await prisma.order.findUnique({
@@ -82,14 +96,14 @@ describe('OrdersService (integration)', () => {
     expect(eventBridge.orderCreated[0]).toMatchObject({
       orderId: order.orderId,
       customerId,
-      warehouseId: 'wh-norte'
+      warehouseId: 'trujillo',
+      totalGross: 295
     })
   })
 
   it('returns the same order for repeated idempotency keys', async () => {
     const payload = {
-      warehouseId: 'wh-norte',
-      lines: [{ sku: 'SKU-002', quantity: 1 }]
+      lines: [{ sku: 'SKU-001', quantity: 10 }]
     }
 
     const first = await service.create(
@@ -113,8 +127,7 @@ describe('OrdersService (integration)', () => {
   it('lists and fetches orders scoped to the authenticated customer', async () => {
     const created = await service.create(
       {
-        warehouseId: 'wh-norte',
-        lines: [{ sku: 'SKU-003', quantity: 3 }]
+        lines: [{ sku: 'SKU-001', quantity: 10 }]
       },
       'idem-integration-3',
       'corr-3',

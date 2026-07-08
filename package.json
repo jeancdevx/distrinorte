@@ -18,7 +18,6 @@
     "test:integration": "vitest run --project '@distrinorte/integration-tests'",
     "test:coverage": "vitest run --coverage --project '@distrinorte/shared' --project '@distrinorte/events' --project '@distrinorte/orders-service' --project '@distrinorte/customers-service' --project '@distrinorte/catalog-service'",
     "db:ensure-databases": "pnpm --filter @distrinorte/database db:ensure-databases",
-    "db:migrate:legacy-split": "pnpm --filter @distrinorte/database db:migrate:legacy-split",
     "db:migrate:deploy": "pnpm --filter @distrinorte/database db:migrate:deploy",
     "db:migrate:dev": "pnpm --filter @distrinorte/database db:migrate:dev",
     "db:seed": "pnpm --filter @distrinorte/database db:seed",
