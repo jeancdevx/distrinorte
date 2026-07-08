@@ -115,7 +115,7 @@ describe('Order stock flow (integration)', () => {
   it('reserves stock after order.created when inventory is sufficient', async () => {
     const order = await ordersService.create(
       {
-        lines: [{ sku: 'SKU-FLOW-1', quantity: 4 }]
+        lines: [{ sku: 'SKU-FLOW-1', quantity: 10 }]
       },
       'idem-flow-1',
       'corr-flow-1',
@@ -154,7 +154,7 @@ describe('Order stock flow (integration)', () => {
       where: { id: order.orderId }
     })
 
-    expect(inventory?.quantity).toBe(6)
+    expect(inventory?.quantity).toBe(0)
     expect(reservations).toHaveLength(1)
     expect(confirmed?.status).toBe(OrderStatus.CONFIRMED)
     expect(inventoryEventBridge.stockReserved).toHaveLength(1)

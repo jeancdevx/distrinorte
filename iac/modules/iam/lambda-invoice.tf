@@ -1,11 +1,3 @@
-locals {
-  create_invoice_worker_iam = (
-    var.invoices_bucket_arn != null
-    && var.invoices_table_arn != null
-    && var.billing_work_queue_arn != null
-  )
-}
-
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
     effect = "Allow"
@@ -20,8 +12,6 @@ data "aws_iam_policy_document" "lambda_assume" {
 }
 
 resource "aws_iam_role" "invoice_worker" {
-  count = local.create_invoice_worker_iam ? 1 : 0
-
   name               = "${local.name_prefix}-invoice-worker"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 
@@ -32,15 +22,11 @@ resource "aws_iam_role" "invoice_worker" {
 }
 
 resource "aws_iam_role_policy_attachment" "invoice_worker_basic" {
-  count = local.create_invoice_worker_iam ? 1 : 0
-
-  role       = aws_iam_role.invoice_worker[0].name
+  role       = aws_iam_role.invoice_worker.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 data "aws_iam_policy_document" "invoice_worker" {
-  count = local.create_invoice_worker_iam ? 1 : 0
-
   statement {
     sid    = "ReadWriteInvoicesBucket"
     effect = "Allow"
@@ -96,11 +82,9 @@ data "aws_iam_policy_document" "invoice_worker" {
 }
 
 resource "aws_iam_policy" "invoice_worker" {
-  count = local.create_invoice_worker_iam ? 1 : 0
-
   name        = "${local.name_prefix}-invoice-worker"
   description = "Invoice worker: S3 invoices, DynamoDB invoices, EventBridge publish, billing-work consume"
-  policy      = data.aws_iam_policy_document.invoice_worker[0].json
+  policy      = data.aws_iam_policy_document.invoice_worker.json
 
   tags = merge(var.tags, {
     Name    = "${local.name_prefix}-invoice-worker"
@@ -109,8 +93,6 @@ resource "aws_iam_policy" "invoice_worker" {
 }
 
 resource "aws_iam_role_policy_attachment" "invoice_worker" {
-  count = local.create_invoice_worker_iam ? 1 : 0
-
-  role       = aws_iam_role.invoice_worker[0].name
-  policy_arn = aws_iam_policy.invoice_worker[0].arn
+  role       = aws_iam_role.invoice_worker.name
+  policy_arn = aws_iam_policy.invoice_worker.arn
 }

@@ -35,5 +35,5 @@ output "seed_runner_task_role_arn" {
 
 output "invoice_worker_role_arn" {
   description = "Execution role ARN del invoice-worker Lambda"
-  value       = try(aws_iam_role.invoice_worker[0].arn, null)
+  value       = aws_iam_role.invoice_worker.arn
 }

@@ -54,21 +54,15 @@ variable "catalog_images_bucket_arn" {
 variable "invoices_bucket_arn" {
   description = "ARN bucket S3 de facturas PDF"
   type        = string
-  default     = null
-  nullable    = true
 }
 
 variable "invoices_table_arn" {
   description = "ARN tabla DynamoDB invoices"
   type        = string
-  default     = null
-  nullable    = true
 }
 
 variable "billing_work_queue_arn" {
   description = "ARN cola SQS billing-work"
   type        = string
-  default     = null
-  nullable    = true
 }
 
