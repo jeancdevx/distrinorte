@@ -1,7 +1,8 @@
 import {
   BadRequestException,
   NotFoundException,
-  ServiceUnavailableException
+  ServiceUnavailableException,
+  UnprocessableEntityException
 } from '@nestjs/common'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -14,12 +15,30 @@ function buildOrder(overrides: Record<string, unknown> = {}) {
     id: 'ord-1',
     status: OrderStatus.PENDING,
     customerId: 'cust-1',
-    warehouseId: 'wh-1',
+    warehouseId: 'trujillo',
     rejectionReason: null,
+    totalNet: 250,
+    totalTax: 45,
+    totalGross: 295,
+    estimatedDeliveryDate: null,
+    invoiceId: null,
+    pdfUrl: null,
     correlationId: 'corr-1',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    lines: [{ sku: 'SKU-1', quantity: 2 }],
+    lines: [
+      {
+        sku: 'SKU-1',
+        quantity: 10,
+        unitPriceNet: 25,
+        saleUnit: 'UN',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO',
+        lineNet: 250,
+        lineTax: 45,
+        lineGross: 295
+      }
+    ],
     ...overrides
   }
 }
@@ -36,18 +55,29 @@ describe('OrdersService', () => {
       },
       customerSnapshot: {
         findUnique: vi.fn()
-      }
+      },
+      priceSnapshot: {
+        findUnique: vi.fn()
+      },
+      outboxEvent: {
+        create: vi.fn()
+      },
+      $transaction: vi.fn()
     }
   }
-  const eventBridge = {
-    publishOrderCreated: vi.fn()
+  const outboxProcessor = {
+    flush: vi.fn()
   }
 
   let service: OrdersService
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new OrdersService(prisma as never, eventBridge as never)
+    prisma.db.$transaction.mockImplementation(
+      async (callback: (tx: typeof prisma.db) => Promise<unknown>) =>
+        callback(prisma.db)
+    )
+    service = new OrdersService(prisma as never, outboxProcessor as never)
   })
 
   describe('create', () => {
@@ -56,16 +86,15 @@ describe('OrdersService', () => {
       prisma.db.order.findUnique.mockResolvedValue(existing)
 
       const result = await service.create(
-        { warehouseId: 'wh-1', lines: [{ sku: 'SKU-1', quantity: 2 }] },
+        { lines: [{ sku: 'SKU-1', quantity: 10 }] },
         'idem-1',
         'corr-1',
         'cust-1'
       )
 
       expect(result.orderId).toBe('ord-1')
-      expect(prisma.db.order.create).not.toHaveBeenCalled()
-      expect(eventBridge.publishOrderCreated).not.toHaveBeenCalled()
       expect(prisma.db.customerSnapshot.findUnique).not.toHaveBeenCalled()
+      expect(outboxProcessor.flush).not.toHaveBeenCalled()
     })
 
     it('hides another customer order behind not found', async () => {
@@ -92,7 +121,7 @@ describe('OrdersService', () => {
 
       await expect(
         service.create(
-          { warehouseId: 'wh-1', lines: [{ sku: 'SKU-1', quantity: 1 }] },
+          { lines: [{ sku: 'SKU-1', quantity: 10 }] },
           'idem-1',
           'corr-1',
           'cust-1'
@@ -100,7 +129,31 @@ describe('OrdersService', () => {
       ).rejects.toBeInstanceOf(ServiceUnavailableException)
     })
 
-    it('persists and publishes a new order', async () => {
+    it('rejects orders below the minimum gross', async () => {
+      prisma.db.order.findUnique.mockResolvedValue(null)
+      prisma.db.customerSnapshot.findUnique.mockResolvedValue({
+        customerId: 'cust-1',
+        assignedWarehouseId: 'trujillo'
+      })
+      prisma.db.priceSnapshot.findUnique.mockResolvedValue({
+        sku: 'SKU-1',
+        unitPriceNet: 10,
+        saleUnit: 'UN',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO'
+      })
+
+      await expect(
+        service.create(
+          { lines: [{ sku: 'SKU-1', quantity: 10 }] },
+          'idem-1',
+          'corr-1',
+          'cust-1'
+        )
+      ).rejects.toBeInstanceOf(UnprocessableEntityException)
+    })
+
+    it('persists via outbox and flushes order.created', async () => {
       const created = buildOrder()
       prisma.db.order.findUnique.mockResolvedValue(null)
       prisma.db.customerSnapshot.findUnique.mockResolvedValue({
@@ -109,40 +162,26 @@ describe('OrdersService', () => {
         assignedWarehouseId: 'trujillo',
         status: 'ACTIVE'
       })
+      prisma.db.priceSnapshot.findUnique.mockResolvedValue({
+        sku: 'SKU-1',
+        unitPriceNet: 25,
+        saleUnit: 'UN',
+        unitsPerBaseUnit: 1,
+        taxAffectation: 'GRAVADO'
+      })
       prisma.db.order.create.mockResolvedValue(created)
-      eventBridge.publishOrderCreated.mockResolvedValue(undefined)
+      outboxProcessor.flush.mockResolvedValue(undefined)
 
       const result = await service.create(
-        { warehouseId: 'wh-1', lines: [{ sku: 'SKU-1', quantity: 2 }] },
+        { lines: [{ sku: 'SKU-1', quantity: 10 }] },
         'idem-1',
         'corr-1',
         'cust-1'
       )
 
       expect(result.status).toBe(OrderStatus.PENDING)
-      expect(prisma.db.customerSnapshot.findUnique).toHaveBeenCalledWith({
-        where: { customerId: 'cust-1' }
-      })
-      expect(eventBridge.publishOrderCreated).toHaveBeenCalledOnce()
-    })
-
-    it('fails when event publication fails after persistence', async () => {
-      const created = buildOrder()
-      prisma.db.order.findUnique.mockResolvedValue(null)
-      prisma.db.customerSnapshot.findUnique.mockResolvedValue({
-        customerId: 'cust-1'
-      })
-      prisma.db.order.create.mockResolvedValue(created)
-      eventBridge.publishOrderCreated.mockRejectedValue(new Error('bus down'))
-
-      await expect(
-        service.create(
-          { warehouseId: 'wh-1', lines: [{ sku: 'SKU-1', quantity: 2 }] },
-          'idem-1',
-          'corr-1',
-          'cust-1'
-        )
-      ).rejects.toBeInstanceOf(ServiceUnavailableException)
+      expect(prisma.db.outboxEvent.create).toHaveBeenCalledOnce()
+      expect(outboxProcessor.flush).toHaveBeenCalledOnce()
     })
   })
 
@@ -175,7 +214,8 @@ describe('OrdersService', () => {
         items: [
           expect.objectContaining({
             orderId: 'ord-1',
-            customerId: 'cust-1'
+            customerId: 'cust-1',
+            totalGross: 295
           })
         ],
         total: 1

@@ -2,6 +2,10 @@ export type ProductItem = {
   sku: string
   name: string
   price: number
+  unitPriceNet: number
+  saleUnit: string
+  unitsPerBaseUnit: number
+  taxAffectation: string
   category: string
   imageKey: string
   active?: boolean
@@ -19,6 +23,7 @@ export function parseProductItem(
   const category = readString(item.category)
   const imageKey = readString(item.imageKey)
   const price = readNumber(item.price)
+  const unitPriceNet = readNumber(item.unitPriceNet) ?? price
 
   if (!sku || !name || !category || !imageKey || price === null) {
     return null
@@ -35,6 +40,10 @@ export function parseProductItem(
     sku,
     name,
     price,
+    unitPriceNet: unitPriceNet ?? price,
+    saleUnit: readString(item.saleUnit) ?? 'UN',
+    unitsPerBaseUnit: readNumber(item.unitsPerBaseUnit) ?? 1,
+    taxAffectation: readString(item.taxAffectation) ?? 'GRAVADO',
     category,
     imageKey,
     ...(active === undefined ? {} : { active })
