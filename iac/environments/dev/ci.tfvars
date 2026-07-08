@@ -62,11 +62,11 @@ enable_custom_domain = false
 # cognito_callback_urls = ["https://pedidos.galaxymorph.com/callback"]
 # cognito_logout_urls   = ["https://pedidos.galaxymorph.com/"]
 
-enable_github_ci               = true
-github_repository              = "jeancdevx/distrinorte"
-github_environment             = "dev"
-github_create_oidc_provider    = true
-github_terraform_grant_admin   = true
+enable_github_ci             = true
+github_repository            = "jeancdevx/distrinorte"
+github_environment           = "dev"
+github_create_oidc_provider  = true
+github_terraform_grant_admin = true
 
 observability_alarm_email = "jcode2006@gmail.com"
 

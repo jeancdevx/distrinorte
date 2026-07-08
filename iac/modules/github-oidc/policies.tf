@@ -74,9 +74,9 @@ data "aws_iam_policy_document" "deploy" {
   }
 
   statement {
-    sid       = "PassEcsTaskRoles"
-    effect    = "Allow"
-    actions   = ["iam:PassRole"]
+    sid     = "PassEcsTaskRoles"
+    effect  = "Allow"
+    actions = ["iam:PassRole"]
     resources = [
       "arn:aws:iam::${local.account_id}:role/${local.name_prefix}-ecs-task-execution",
       "arn:aws:iam::${local.account_id}:role/${local.name_prefix}-seed-runner-task",

@@ -19,7 +19,7 @@ data "aws_iam_policy_document" "state_access" {
     ]
     resources = var.state_key_prefix != "" ? [
       "arn:aws:s3:::${var.state_bucket_name}/${var.state_key_prefix}*",
-    ] : [
+      ] : [
       "arn:aws:s3:::${var.state_bucket_name}/*",
     ]
   }
